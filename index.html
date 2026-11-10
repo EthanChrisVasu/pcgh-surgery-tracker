@@ -28,11 +28,18 @@
             appId: "1:618435386767:web:311124fe9830604397bffa"
         };
 
-        // Initialize Firebase safely
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
+        // Initialize Firebase with a Safety Net to prevent crashes
+        let db = null;
+        try {
+            if (typeof firebase !== 'undefined') {
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(firebaseConfig);
+                }
+                db = firebase.database();
+            }
+        } catch (error) {
+            console.error("Firebase Connection Error:", error);
         }
-        const db = firebase.database();
 
         const { useState, useEffect } = React;
 
@@ -75,10 +82,10 @@
             const [activeUser, setActiveUser] = useState(""); 
             const [loginTab, setLoginTab] = useState('clerk'); 
             
-            // Login Form States
+            // Login Form States (Fixed variable mapping)
             const [clerkNameInput, setClerkNameInput] = useState("");
             const [clerkIdInput, setClerkIdInput] = useState("");
-            const [doctorNameSelect, setDoctorNameSelect] = useState(DOCTORS[0].name);
+            const [selectedDoctorName, setSelectedDoctorName] = useState(DOCTORS[0].name);
             const [doctorPinInput, setDoctorPinInput] = useState("");
 
             // --- APP DATA STATE ---
@@ -90,14 +97,13 @@
 
             // 🔥 FIREBASE REAL-TIME SYNC 🔥
             useEffect(() => {
-                if (!isAuthenticated) return;
+                if (!isAuthenticated || !db) return;
 
                 const patientsRef = db.ref('pcgh/patients');
                 const notifsRef = db.ref('pcgh/notifications');
 
                 patientsRef.on('value', (snapshot) => {
                     if (snapshot.exists()) {
-                        // DATA SAFETY NET: Prevent Firebase from passing malformed objects that crash React
                         let data = snapshot.val();
                         let safeArray = Array.isArray(data) ? data : Object.values(data);
                         setPatients(safeArray.filter(Boolean));
@@ -124,7 +130,7 @@
             const syncPatients = (updaterFn) => {
                 setPatients(prev => {
                     const next = updaterFn(prev);
-                    db.ref('pcgh/patients').set(next);
+                    if (db) db.ref('pcgh/patients').set(next);
                     return next;
                 });
             };
@@ -132,7 +138,7 @@
             const addNotification = (text) => {
                 setNotifications(prev => {
                     const newNotifs = [{ id: Date.now(), text, time: new Date().toLocaleTimeString() }, ...prev.slice(0, 9)];
-                    db.ref('pcgh/notifications').set(newNotifs);
+                    if (db) db.ref('pcgh/notifications').set(newNotifs);
                     return newNotifs;
                 });
             };
@@ -149,7 +155,7 @@
 
             const handleDoctorLogin = (e) => {
                 e.preventDefault();
-                const doc = DOCTORS.find(d => d.name === doctorNameSelect);
+                const doc = DOCTORS.find(d => d.name === selectedDoctorName);
                 if (doc && doc.pin === doctorPinInput) {
                     setActiveUser(doc.name);
                     setUserRole("doctor");
@@ -168,7 +174,10 @@
             };
 
             const updatePatientField = (id, field, value, fieldName) => {
-                addNotification(`📝 ${activeUser} updated ${patients.find(p=>p.id===id).name}'s ${fieldName}.`);
+                const targetPatient = patients.find(p => p.id === id);
+                if (!targetPatient) return;
+                
+                addNotification(`📝 ${activeUser} updated ${targetPatient.name}'s ${fieldName}.`);
                 syncPatients(prev => prev.map(p => p.id === id ? { ...p, [field]: value } : p));
             };
 
@@ -194,7 +203,7 @@
                         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                         const base64Img = canvas.toDataURL('image/jpeg', 0.6); 
 
-                        const patientName = patients.find(p=>p.id===id).name;
+                        const patientName = patients.find(p=>p.id===id)?.name || "a patient";
                         addNotification(`📸 ${activeUser} uploaded COD proof and marked it DONE for ${patientName}.`);
                         syncPatients(prev => prev.map(p => p.id === id ? { ...p, codImage: base64Img, codDone: true } : p));
                     };
@@ -204,12 +213,17 @@
             };
 
             const toggleLocation = (id, newLoc) => {
-                addNotification(`📍 ${patients.find(p=>p.id===id).name} moved to [${newLoc}] by ${activeUser}.`);
+                const targetPatient = patients.find(p => p.id === id);
+                if (!targetPatient) return;
+                
+                addNotification(`📍 ${targetPatient.name} moved to [${newLoc}] by ${activeUser}.`);
                 syncPatients(prev => prev.map(p => p.id === id ? { ...p, location: newLoc } : p));
             };
 
             const setAmputation = (id, type) => {
                 const p = patients.find(pat=>pat.id===id);
+                if (!p) return;
+                
                 let codText = p.cod;
                 if (type) {
                     codText = "Clean closed surgical stump with Povidone-Iodine (Betadine), pat dry, and wrap with dry sterile gauze & elastic bandage OD.";
@@ -232,7 +246,6 @@
                 return (
                     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
                         <div className="max-w-md w-full bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden">
-                            {/* Gateway Header */}
                             <div className="bg-slate-900 p-8 text-center space-y-3">
                                 <div className="mx-auto bg-emerald-500 w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg">
                                     <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
@@ -241,7 +254,6 @@
                                 <p className="text-sm text-slate-400 font-medium">Real-Time Tracker Access Portal</p>
                             </div>
 
-                            {/* Role Selection Tabs */}
                             <div className="flex border-b border-slate-200">
                                 <button type="button" onClick={() => setLoginTab('clerk')} className={`flex-1 py-4 text-sm font-bold transition ${loginTab === 'clerk' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50' : 'text-slate-500 hover:bg-slate-50'}`}>
                                     📋 Clerk Login
@@ -251,7 +263,6 @@
                                 </button>
                             </div>
 
-                            {/* Login Forms */}
                             <div className="p-8">
                                 <div className={loginTab === 'clerk' ? 'block' : 'hidden'}>
                                     <form onSubmit={handleClerkLogin} className="space-y-5">
@@ -297,7 +308,6 @@
             // ==========================================
             return (
                 <div className="min-h-screen bg-slate-50 text-slate-900 pb-16">
-                    {/* Top Header */}
                     <header className="bg-white border-b border-slate-200 sticky top-0 z-50 px-4 py-3 shadow-sm">
                         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
                             <div className="flex items-center gap-3">
@@ -317,7 +327,6 @@
                                 </div>
                             </div>
 
-                            {/* Action Buttons */}
                             <div className="flex flex-wrap items-center gap-2">
                                 <button onClick={() => setShowSops(!showSops)} className="bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 px-3.5 py-2 rounded-lg text-xs font-bold transition">
                                     📋 SOPs & Rules
@@ -330,7 +339,6 @@
                         </div>
                     </header>
 
-                    {/* Notification Ticker */}
                     {notifications.length > 0 && (
                         <div className="bg-white border-b border-slate-200 px-4 py-2.5 text-xs shadow-sm">
                             <div className="max-w-7xl mx-auto flex items-center gap-3 overflow-x-auto">
@@ -362,7 +370,7 @@
                         )}
 
                         {["PEDIATRICS SX WARD", "FEMALE SURGERY WARD", "MALE SURGERY WARD", "ENT / OPHTHA WARD", "ISOLATION SURGERY WARD", "SURGICAL SUITE ROOM", "CICU", "IM WARD", "PEDIATRIC WARD"].map(wardName => {
-                            const wardPatients = patients.filter(p => p && p.ward === wardName); // Added safety check for p
+                            const wardPatients = patients.filter(p => p && p.ward === wardName);
                             if (wardPatients.length === 0) return null;
 
                             return (
