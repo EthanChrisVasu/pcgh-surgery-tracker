@@ -42,6 +42,14 @@
 
         const { useState, useEffect } = React;
 
+        const CURRENT_VERSION = "v2.6.0";
+        const VERSION_LOG_NOTES = [
+            { category: "UI Cleanup", text: "Removed literal color text tags from badges and fully enforced 'SPECIAL WOUND CARE INSTRUCTIONS' headers on all patient cards." },
+            { category: "New Feature", text: "Added Version Log & Release Notes pop-up modal upon login for all clerks and doctors." },
+            { category: "Patient Management", text: "Added Main Isolation Ward (Rooms 401–430) and universal Add Patient intake form." },
+            { category: "Discharge Workflow", text: "MGH Discharge status includes a 24-hour auto-archive timer with warning prompts and undo support." }
+        ];
+
         const WARD_LIST = [
             "PEDIATRICS SX WARD", 
             "FEMALE SURGERY WARD", 
@@ -57,28 +65,28 @@
 
         const INITIAL_PATIENTS = [
             { id: 1, name: "Pascual, Gervacio (9/M)", ward: "PEDIATRICS SX WARD", room: "", dx: "Acute Appendicitis", surgery: "Appendectomy", monitor: "VSQ4", cod: "DRY WITH BETADINE OD", codTiming: "OD", location: "Post-Op", watcherName: "Parent / Guardian", watcherPhone: "0917-550-0101", isPostAmputation: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
-            { id: 2, name: "De Guzman, Lolita (76/F)", ward: "FEMALE SURGERY WARD", room: "", dx: "Femoral Neck Fracture (L) sec to Fall", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0102", isPostAmputation: false, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
-            { id: 3, name: "Baco, Kristian (34/F)", ward: "FEMALE SURGERY WARD", room: "", dx: "Femoral Neck Fracture (L)", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0103", isPostAmputation: false, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
-            { id: 4, name: "Menju, Rebecca Ibasco (70/F)", ward: "FEMALE SURGERY WARD", room: "", dx: "Partial Gut Obstruction sec to Sigmoid Mass", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0104", isPostAmputation: false, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
+            { id: 2, name: "De Guzman, Lolita (76/F)", ward: "FEMALE SURGERY WARD", room: "", dx: "Femoral Neck Fracture (L) sec to Fall", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0102", isPostAmputation: false, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
+            { id: 3, name: "Baco, Kristian (34/F)", ward: "FEMALE SURGERY WARD", room: "", dx: "Femoral Neck Fracture (L)", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0103", isPostAmputation: false, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
+            { id: 4, name: "Menju, Rebecca Ibasco (70/F)", ward: "FEMALE SURGERY WARD", room: "", dx: "Partial Gut Obstruction sec to Sigmoid Mass", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0104", isPostAmputation: false, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
             { id: 5, name: "Cajeda, Maybeline (34/F)", ward: "FEMALE SURGERY WARD", room: "", dx: "Multiple Injuries sec to VA (Laceration (L) Leg; Femoral Fracture (L))", surgery: "", monitor: "VSQ4", cod: "DRY WITH BETADINE OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0105", isPostAmputation: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
-            { id: 6, name: "Peralta, Reymark (28/M)", ward: "MALE SURGERY WARD", room: "", dx: "Multiple Injuries sec to VA (Femoral Shaft Fracture (L); Abrasion (L) Knee and Thigh)", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0106", isPostAmputation: false, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
+            { id: 6, name: "Peralta, Reymark (28/M)", ward: "MALE SURGERY WARD", room: "", dx: "Multiple Injuries sec to VA (Femoral Shaft Fracture (L); Abrasion (L) Knee and Thigh)", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0106", isPostAmputation: false, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
             { id: 7, name: "Fernando, Carlos Cañamo (63/M)", ward: "MALE SURGERY WARD", room: "", dx: "T/C Gastric Outlet Obstruction sec to G1 Mass", surgery: "", monitor: "VSQ4 | CBG: TID", cod: "DRY WITH BETADINE OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0107", isPostAmputation: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
             { id: 8, name: "Villanueva, Vidal Alberto (51/M)", ward: "MALE SURGERY WARD", room: "", dx: "T/C Open Fracture with Dislocation, Tibia-Fibula (R) sec to RCI", surgery: "", monitor: "VSQ4", cod: "DRY WITH BETADINE OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0108", isPostAmputation: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
             { id: 9, name: "Julom, El Quinwell", ward: "MALE SURGERY WARD", room: "", dx: "Stab Wound Abdomen", surgery: "Exploratory Laparotomy", monitor: "VSQ4 | JP Drain | NGT | Urine Output", cod: "DRY WITH BETADINE OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0109", isPostAmputation: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
-            { id: 10, name: "Montano, Luzviminda (57/F)", ward: "ENT / OPHTHA WARD", room: "", dx: "Sigmoid Adenocarcinoma Stage 3, Colovesical Fistula", surgery: "Colostomy", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0110", isPostAmputation: false, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
+            { id: 10, name: "Montano, Luzviminda (57/F)", ward: "ENT / OPHTHA WARD", room: "", dx: "Sigmoid Adenocarcinoma Stage 3, Colovesical Fistula", surgery: "Colostomy", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0110", isPostAmputation: false, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
             { id: 11, name: "Latumbo Jr., Zosimo (70/M)", ward: "ISOLATION SURGERY WARD", room: "", dx: "DM-2 Uncontrolled, Cellulitis with Wet Gangrene 3rd & 4th Digits (L) Foot", surgery: "BKA (Below-Knee Amputation)", monitor: "VSQ4 | CBG: TID", cod: "DRY WITH BETADINE OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0111", isPostAmputation: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
-            { id: 12, name: "Cabangbang, Ofelia (66/F)", ward: "ISOLATION SURGERY WARD", room: "", dx: "Diabetic Foot (R)", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0112", isPostAmputation: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
-            { id: 13, name: "Eribal, Zandro Ferrer (54/M)", ward: "ISOLATION SURGERY WARD", room: "", dx: "Non-healing Wound (L) Thigh, T2 DM", surgery: "", monitor: "VSQ2 | CBG: Q1", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0113", isPostAmputation: false, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
-            { id: 14, name: "Quitain, Rodel Badrina (52/M)", ward: "ISOLATION SURGERY WARD", room: "", dx: "Non-healing Wound (L) Heel (Note: presence of maggots)", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH THIRD'S SOLUTION", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0114", isPostAmputation: false, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
-            { id: 15, name: "Manlangit, Allan (44/M)", ward: "ISOLATION SURGERY WARD", room: "", dx: "Sepsis sec to Decubitus Ulcer Grade IV", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0115", isPostAmputation: false, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
-            { id: 16, name: "Caballero, Daniel Seth", ward: "SURGICAL SUITE ROOM", room: "", dx: "Fracture, Middle 3rd Humerus (R)", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0116", isPostAmputation: false, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
-            { id: 17, name: "Buenviaje, Nilda Cajipo (69/F)", ward: "CICU", room: "", dx: "Diabetic Foot (R)", surgery: "", monitor: "VSQ1 | CBG: TID", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0117", isPostAmputation: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
-            { id: 18, name: "Lumandez, Pablito Jr.", ward: "CICU", room: "", dx: "Diabetic Foot / Wound", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0118", isPostAmputation: false, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
-            { id: 19, name: "Zuniga", ward: "IM WARD", room: "", dx: "Sepsis sec to Sacral Ulcers", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0119", isPostAmputation: false, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
-            { id: 20, name: "Atanante, Jennifer", ward: "IM WARD", room: "", dx: "Cellulitis / Wound Care", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0120", isPostAmputation: false, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
-            { id: 21, name: "Garrido", ward: "IM WARD", room: "", dx: "Sacral Ulcers", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0121", isPostAmputation: false, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
-            { id: 22, name: "Ellaso, Eric (56/M)", ward: "IM WARD", room: "", dx: "Wound Care", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0122", isPostAmputation: false, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
-            { id: 23, name: "Castillejos, Draven Mell (2/M)", ward: "PEDIATRIC WARD", room: "", dx: "Perianal Cellulitis/Abscess, T/C Sepsis, T/C ALL", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION", codTiming: "OD", location: "In Ward", watcherName: "Parent / Guardian", watcherPhone: "0917-550-0123", isPostAmputation: false, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null }
+            { id: 12, name: "Cabangbang, Ofelia (66/F)", ward: "ISOLATION SURGERY WARD", room: "", dx: "Diabetic Foot (R)", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0112", isPostAmputation: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
+            { id: 13, name: "Eribal, Zandro Ferrer (54/M)", ward: "ISOLATION SURGERY WARD", room: "", dx: "Non-healing Wound (L) Thigh, T2 DM", surgery: "", monitor: "VSQ2 | CBG: Q1", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0113", isPostAmputation: false, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
+            { id: 14, name: "Quitain, Rodel Badrina (52/M)", ward: "ISOLATION SURGERY WARD", room: "", dx: "Non-healing Wound (L) Heel (Note: presence of maggots)", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH THIRD'S SOLUTION OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0114", isPostAmputation: false, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
+            { id: 15, name: "Manlangit, Allan (44/M)", ward: "ISOLATION SURGERY WARD", room: "", dx: "Sepsis sec to Decubitus Ulcer Grade IV", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0115", isPostAmputation: false, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
+            { id: 16, name: "Caballero, Daniel Seth", ward: "SURGICAL SUITE ROOM", room: "", dx: "Fracture, Middle 3rd Humerus (R)", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0116", isPostAmputation: false, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
+            { id: 17, name: "Buenviaje, Nilda Cajipo (69/F)", ward: "CICU", room: "", dx: "Diabetic Foot (R)", surgery: "", monitor: "VSQ1 | CBG: TID", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0117", isPostAmputation: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
+            { id: 18, name: "Lumandez, Pablito Jr.", ward: "CICU", room: "", dx: "Diabetic Foot / Wound", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0118", isPostAmputation: false, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
+            { id: 19, name: "Zuniga", ward: "IM WARD", room: "", dx: "Sepsis sec to Sacral Ulcers", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0119", isPostAmputation: false, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
+            { id: 20, name: "Atanante, Jennifer", ward: "IM WARD", room: "", dx: "Cellulitis / Wound Care", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0120", isPostAmputation: false, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
+            { id: 21, name: "Garrido", ward: "IM WARD", room: "", dx: "Sacral Ulcers", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0121", isPostAmputation: false, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
+            { id: 22, name: "Ellaso, Eric (56/M)", ward: "IM WARD", room: "", dx: "Wound Care", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0122", isPostAmputation: false, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
+            { id: 23, name: "Castillejos, Draven Mell (2/M)", ward: "PEDIATRIC WARD", room: "", dx: "Perianal Cellulitis/Abscess, T/C Sepsis, T/C ALL", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "In Ward", watcherName: "Parent / Guardian", watcherPhone: "0917-550-0123", isPostAmputation: false, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null }
         ];
 
         const DOCTORS = [
@@ -108,6 +116,8 @@
             const [clerkShift, setClerkShift] = useState("AM"); 
             const [selectedDoctorName, setSelectedDoctorName] = useState(DOCTORS[0].name);
             const [doctorPinInput, setDoctorPinInput] = useState("");
+
+            const [showVersionModal, setShowVersionModal] = useState(false);
 
             const [patients, setPatients] = useState(INITIAL_PATIENTS);
             const [notifications, setNotifications] = useState([]);
@@ -194,6 +204,7 @@
                 setActiveUser(formattedName);
                 setUserRole("clerk");
                 setIsAuthenticated(true);
+                setShowVersionModal(true);
             };
 
             const handleDoctorLogin = (e) => {
@@ -205,6 +216,7 @@
                     setUserRole("doctor");
                     setIsAuthenticated(true);
                     setDoctorPinInput("");
+                    setShowVersionModal(true);
                 } else {
                     alert("Incorrect Doctor PIN.");
                 }
@@ -261,7 +273,6 @@
                 syncPatients(prev => prev.map(pat => pat.id === id ? { ...pat, watcherName: newName.toUpperCase(), watcherPhone: newPhone } : pat));
             };
 
-            // SPECIAL WOUND CARE PROTOCOL & TIMING UPDATER
             const updateWoundCareProtocol = (id, protocolType, timingAbbr) => {
                 const p = patients.find(pat => pat.id === id);
                 if (!p) return;
@@ -277,7 +288,6 @@
                 syncPatients(prev => prev.map(pat => pat.id === id ? { ...pat, cod: finalCod, codTiming: timingAbbr } : pat));
             };
 
-            // UNIVERSAL BETADINE ALLOWANCE TOGGLE
             const toggleBetadineAllowance = (id) => {
                 const p = patients.find(pat => pat.id === id);
                 if (!p) return;
@@ -595,6 +605,32 @@
                         </div>
                     </header>
 
+                    {/* VERSION LOG POP-UP MODAL UPON LOGIN */}
+                    {showVersionModal && (
+                        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                            <div className="bg-white border border-slate-200 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-200">
+                                <div className="flex justify-between items-center border-b border-slate-200 pb-3">
+                                    <div className="flex items-center gap-2">
+                                        <span className="bg-emerald-100 text-emerald-800 text-xs font-black px-2.5 py-1 rounded-full uppercase tracking-wider">{CURRENT_VERSION}</span>
+                                        <h2 className="text-lg font-bold text-slate-900">Release Notes & Version Log</h2>
+                                    </div>
+                                    <button onClick={() => setShowVersionModal(false)} className="text-slate-400 hover:text-slate-600 font-bold text-xl px-2">✕</button>
+                                </div>
+                                <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
+                                    {VERSION_LOG_NOTES.map((note, index) => (
+                                        <div key={index} className="p-3 bg-slate-50 rounded-2xl border border-slate-200 text-xs space-y-1">
+                                            <span className="font-bold text-blue-600 uppercase tracking-wider text-[10px] bg-blue-50 px-2 py-0.5 rounded border border-blue-100">{note.category}</span>
+                                            <p className="text-slate-700 font-medium pt-1">{note.text}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                                <button onClick={() => setShowVersionModal(false)} className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3.5 rounded-xl shadow-md transition text-sm">
+                                    ✕ Close & Continue to Work
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
                     {/* INTERACTIVE NOTIFICATION BAR */}
                     {notifications.length > 0 && (
                         <div onClick={() => setShowActivityLog(true)} className="bg-white border-b border-slate-200 px-4 py-2.5 shadow-sm cursor-pointer hover:bg-slate-50 transition flex items-center justify-between group">
@@ -717,19 +753,19 @@
                                                         </span>
                                                     </div>
                                                     
-                                                    {/* COLOR-CODED PROTOCOL BADGE DISPLAY */}
+                                                    {/* COLOR-CODED PROTOCOL BADGE DISPLAY (CLEANED OF LITERAL TEXT TAGS) */}
                                                     <div className="flex items-center gap-2">
                                                         {patient.cod && patient.cod.includes("BETADINE") ? (
-                                                            <span className="bg-amber-100 text-amber-900 border border-amber-300 px-3 py-1 rounded-lg font-bold uppercase text-xs flex items-center gap-1.5 shadow-sm">
-                                                                <span className="w-2.5 h-2.5 rounded-full bg-amber-700 inline-block"></span> {patient.cod} [BROWN]
+                                                            <span className="bg-amber-100 text-amber-900 border border-amber-300 px-3 py-1.5 rounded-lg font-bold uppercase text-xs flex items-center gap-2 shadow-sm">
+                                                                <span className="w-3 h-3 rounded-full bg-amber-700 inline-block shadow-inner"></span> {patient.cod}
                                                             </span>
                                                         ) : patient.cod && patient.cod.includes("THIRD'S") ? (
-                                                            <span className="bg-orange-100 text-orange-900 border border-orange-300 px-3 py-1 rounded-lg font-bold uppercase text-xs flex items-center gap-1.5 shadow-sm">
-                                                                <span className="w-2.5 h-2.5 rounded-full bg-orange-600 inline-block"></span> {patient.cod} [ORANGE]
+                                                            <span className="bg-orange-100 text-orange-900 border border-orange-300 px-3 py-1.5 rounded-lg font-bold uppercase text-xs flex items-center gap-2 shadow-sm">
+                                                                <span className="w-3 h-3 rounded-full bg-orange-600 inline-block shadow-inner"></span> {patient.cod}
                                                             </span>
                                                         ) : (
-                                                            <span className="bg-slate-100 text-slate-800 border border-slate-300 px-3 py-1 rounded-lg font-bold uppercase text-xs flex items-center gap-1.5 shadow-sm">
-                                                                <span className="w-2.5 h-2.5 rounded-full bg-slate-400 border border-slate-500 inline-block"></span> {patient.cod || "WET-TO-DRY WITH DAKIN'S SOLUTION OD"} [WHITE]
+                                                            <span className="bg-white text-slate-800 border border-slate-300 px-3 py-1.5 rounded-lg font-bold uppercase text-xs flex items-center gap-2 shadow-sm">
+                                                                <span className="w-3 h-3 rounded-full bg-slate-200 border border-slate-400 inline-block shadow-inner"></span> {patient.cod || "WET-TO-DRY WITH DAKIN'S SOLUTION OD"}
                                                             </span>
                                                         )}
                                                     </div>
@@ -949,10 +985,10 @@
                                     {/* ADMIT PROTOCOL SELECTORS */}
                                     <div className="grid grid-cols-2 gap-3">
                                         <div>
-                                            <label className="font-bold text-slate-700 mb-1 block">Special Wound Care Protocol</label>
+                                            <label className="font-bold text-slate-700 mb-1 block">Special Wound Care Instructions</label>
                                             <select name="codProtocol" className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-xs font-medium uppercase focus:outline-none focus:border-blue-500">
                                                 <option value="WET-TO-DRY WITH DAKIN'S SOLUTION">Dakin's Solution (White)</option>
-                                                <option value="DRY WITH BETADINE">Betadine (Brown)</option>
+                                                <option value="DRY WITH BETADINE">Betadine OD (Brown)</option>
                                                 <option value="WET-TO-DRY WITH THIRD'S SOLUTION">Third's Solution (Orange)</option>
                                             </select>
                                         </div>
