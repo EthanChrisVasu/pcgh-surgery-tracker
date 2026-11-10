@@ -42,10 +42,10 @@
 
         const { useState, useEffect } = React;
 
-        const CURRENT_VERSION = "v2.7.0";
+        const CURRENT_VERSION = "v2.8.0";
         const VERSION_LOG_NOTES = [
-            { category: "Wound Care", text: "Added custom free-text input for doctors to write specialized wound care protocols." },
-            { category: "UI Cleanup", text: "Removed top-right 'X' from Version Log modal, retaining only the bottom confirmation button." },
+            { category: "Wound Care UI", text: "Added dedicated edit pencil box for Special Wound Care Instructions, matching the exact style of the Monitor box." },
+            { category: "UI Cleanup", text: "Removed color labels from protocol dropdowns and activity logs." },
             { category: "Patient Management", text: "Added Main Isolation Ward (Rooms 401–430) and universal Add Patient intake form." },
             { category: "Discharge Workflow", text: "MGH Discharge status includes a 24-hour auto-archive timer with warning prompts and undo support." }
         ];
@@ -617,7 +617,7 @@
                         </div>
                     </header>
 
-                    {/* VERSION LOG POP-UP MODAL UPON LOGIN (TOP-RIGHT X REMOVED) */}
+                    {/* VERSION LOG POP-UP MODAL UPON LOGIN (NO TOP-RIGHT X) */}
                     {showVersionModal && (
                         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
                             <div className="bg-white border border-slate-200 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-200">
@@ -754,7 +754,7 @@
                                                     )}
                                                 </div>
 
-                                                {/* SPECIAL WOUND CARE INSTRUCTIONS BOX */}
+                                                {/* SPECIAL WOUND CARE INSTRUCTIONS BOX (WITH EDITABLE BOX LIKE MONITOR) */}
                                                 <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100 space-y-3">
                                                     <div className="flex justify-between items-center text-xs">
                                                         <span className="font-bold text-slate-800 uppercase">SPECIAL WOUND CARE INSTRUCTIONS</span>
@@ -781,7 +781,7 @@
                                                         )}
                                                     </div>
 
-                                                    {/* DOCTOR SELECTORS FOR PROTOCOL, TIMING & CUSTOM INPUT */}
+                                                    {/* DOCTOR SELECTORS & EDITABLE BOX FOR SPECIAL WOUND CARE */}
                                                     {userRole === 'doctor' && (
                                                         <div className="space-y-2 pt-1 bg-white p-2.5 rounded-lg border border-slate-200">
                                                             <div className="grid grid-cols-2 gap-2">
@@ -798,9 +798,9 @@
                                                                         }}
                                                                         className="w-full bg-slate-50 border border-slate-300 rounded px-2 py-1 text-xs font-bold uppercase text-slate-800 focus:outline-none"
                                                                     >
-                                                                        <option value="DAKINS">Dakin's Solution (White)</option>
-                                                                        <option value="BETADINE">Betadine OD (Brown)</option>
-                                                                        <option value="THIRDS">Third's Solution (Orange)</option>
+                                                                        <option value="DAKINS">Dakin's Solution</option>
+                                                                        <option value="BETADINE">Betadine OD</option>
+                                                                        <option value="THIRDS">Third's Solution</option>
                                                                         <option value="CUSTOM">Custom Free-Text</option>
                                                                     </select>
                                                                 </div>
@@ -818,19 +818,17 @@
                                                                     </select>
                                                                 </div>
                                                             </div>
-                                                            {/* CUSTOM EDITABLE TEXT BOX */}
-                                                            {(!patient.cod || (!patient.cod.includes("BETADINE") && !patient.cod.includes("THIRD'S") && !patient.cod.includes("DAKIN"))) && (
-                                                                <div>
-                                                                    <label className="text-[10px] font-bold text-slate-500 block mb-1 uppercase">Custom Protocol Instruction</label>
-                                                                    <input 
-                                                                        type="text"
-                                                                        value={patient.cod || ""}
-                                                                        onChange={(e) => updateWoundCareProtocol(patient.id, 'CUSTOM', '', e.target.value)}
-                                                                        placeholder="ENTER CUSTOM WOUND CARE..."
-                                                                        className="w-full bg-slate-50 border border-slate-300 rounded px-2 py-1 text-xs font-bold uppercase text-slate-800 focus:outline-none"
-                                                                    />
-                                                                </div>
-                                                            )}
+                                                            {/* EDITABLE BOX FOR SPECIAL WOUND CARE INSTRUCTIONS */}
+                                                            <div className="flex items-center justify-between bg-slate-50 p-2 rounded-lg border border-slate-300">
+                                                                <input 
+                                                                    type="text"
+                                                                    value={patient.cod || ""}
+                                                                    onChange={(e) => updateWoundCareProtocol(patient.id, 'CUSTOM', '', e.target.value)}
+                                                                    placeholder="ENTER SPECIAL WOUND CARE..."
+                                                                    className="w-full bg-transparent text-xs font-bold uppercase text-slate-800 focus:outline-none"
+                                                                />
+                                                                <span className="text-blue-500 font-bold ml-2">✏️</span>
+                                                            </div>
                                                         </div>
                                                     )}
 
@@ -1020,16 +1018,16 @@
                                         <div>
                                             <label className="font-bold text-slate-700 mb-1 block">Special Wound Care Instructions</label>
                                             <select name="codProtocol" onChange={(e) => {
-                                                const customInput = document.getElementById('addCustomCodBox');
+                                                const customBox = document.getElementById('addCustomCodBox');
                                                 if(e.target.value === 'CUSTOM') {
-                                                    customInput.style.display = 'block';
+                                                    customBox.style.display = 'block';
                                                 } else {
-                                                    customInput.style.display = 'none';
+                                                    customBox.style.display = 'none';
                                                 }
                                             }} className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-xs font-medium uppercase focus:outline-none focus:border-blue-500">
-                                                <option value="WET-TO-DRY WITH DAKIN'S SOLUTION">Dakin's Solution (White)</option>
-                                                <option value="DRY WITH BETADINE">Betadine OD (Brown)</option>
-                                                <option value="WET-TO-DRY WITH THIRD'S SOLUTION">Third's Solution (Orange)</option>
+                                                <option value="WET-TO-DRY WITH DAKIN'S SOLUTION">Dakin's Solution</option>
+                                                <option value="DRY WITH BETADINE">Betadine OD</option>
+                                                <option value="WET-TO-DRY WITH THIRD'S SOLUTION">Third's Solution</option>
                                                 <option value="CUSTOM">Custom Free-Text</option>
                                             </select>
                                         </div>
