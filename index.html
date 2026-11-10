@@ -42,11 +42,11 @@
 
         const { useState, useEffect } = React;
 
-        const CURRENT_VERSION = "v3.2.0";
+        const CURRENT_VERSION = "v3.3.0";
         const VERSION_LOG_NOTES = [
-            { category: "Vitals & CBG", text: "Separated Vital Signs and CBG into completely independent logging buttons, schedules, and history logs for all patients." },
-            { category: "Wound Care Toggle", text: "Added 'Wound Care Needed / Monitor Only' toggle switch on all patient cards." },
-            { category: "Discharge Workflow", text: "MGH Discharge status includes a 24-hour auto-archive timer with warning prompts and undo support." }
+            { category: "Doctor Profile", text: "Removed 'Surgery Resident / Consultant' titles and added Verified Blue Checkmarks with newly added physicians (Dr. Lumaad, Dr. Penasales, Dr. De Borja, Dr. Ann Onbit)." },
+            { category: "Surgical Status", text: "Updated location buttons to support toggle between Pre-Op and Post-Op." },
+            { category: "Wound Care Toggle", text: "Added 'Wound Care Needed / Monitor Only' toggle switch on all patient cards." }
         ];
 
         const WARD_LIST = [
@@ -88,16 +88,25 @@
             { id: 23, name: "Castillejos, Draven Mell (2/M)", ward: "PEDIATRIC WARD", room: "", dx: "Perianal Cellulitis/Abscess, T/C Sepsis, T/C ALL", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "In Ward", watcherName: "Parent / Guardian", watcherPhone: "0917-550-0123", isPostAmputation: false, needsWoundCare: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], cbgHistory: [], isDischarged: false, dischargeTimestamp: null }
         ];
 
+        // UPDATED DOCTOR LIST WITH UNIQUE SECURE PINS & VERIFIED BLUE CHECKMARKS
         const DOCTORS = [
-            { name: "Dr. Glenn Camaymayan", pin: "1101", title: "Surgery Resident / Consultant" },
-            { name: "Dr. Ruby T.", pin: "1102", title: "Surgery Resident / Consultant" },
-            { name: "Dr. Osorio", pin: "1103", title: "Surgery Resident / Consultant" }
+            { name: "Dr. Glenn Camaymayan", pin: "1101" },
+            { name: "Dr. Ruby T.", pin: "1102" },
+            { name: "Dr. Osorio", pin: "1103" },
+            { name: "Dr. Lumaad", pin: "1104" },
+            { name: "Dr. Penasales", pin: "1105" },
+            { name: "Dr. De Borja", pin: "1106" },
+            { name: "Dr. Ann Onbit", pin: "1107" }
         ];
 
         const DOCTOR_COLORS = {
             "Dr. Glenn Camaymayan": "bg-emerald-50 border-emerald-200 text-emerald-900",
             "Dr. Ruby T.": "bg-purple-50 border-purple-200 text-purple-900",
-            "Dr. Osorio": "bg-orange-50 border-orange-200 text-orange-900"
+            "Dr. Osorio": "bg-orange-50 border-orange-200 text-orange-900",
+            "Dr. Lumaad": "bg-blue-50 border-blue-200 text-blue-900",
+            "Dr. Penasales": "bg-indigo-50 border-indigo-200 text-indigo-900",
+            "Dr. De Borja": "bg-pink-50 border-pink-200 text-pink-900",
+            "Dr. Ann Onbit": "bg-teal-50 border-teal-200 text-teal-900"
         };
 
         const TIMING_ABBRS = [
@@ -132,8 +141,8 @@
             // Modals
             const [orderModal, setOrderModal] = useState(null); 
             const [viewOrdersModal, setViewOrdersModal] = useState(null); 
-            const [vitalsModal, setVitalsModal] = useState(null); // patient object for Vitals
-            const [cbgModal, setCbgModal] = useState(null);       // patient object for CBG
+            const [vitalsModal, setVitalsModal] = useState(null); 
+            const [cbgModal, setCbgModal] = useState(null);       
             const [viewVitalsModal, setViewVitalsModal] = useState(null); 
             const [viewCbgModal, setViewCbgModal] = useState(null);       
             const [addPatientModal, setAddPatientModal] = useState(false);
@@ -213,7 +222,7 @@
                 const doc = DOCTORS.find(d => d.name === selectedDoctorName);
                 if (doc && doc.pin === doctorPinInput) {
                     const cleanDocName = doc.name.replace(/^Dr\.\s*/, '');
-                    setActiveUser(`Dr. ${cleanDocName}`);
+                    setActiveUser(`Dr. ${cleanDocName} ✔️`);
                     setUserRole("doctor");
                     setIsAuthenticated(true);
                     setDoctorPinInput("");
@@ -419,7 +428,6 @@
                 }
             };
 
-            // SEPARATE SAVE VITALS HANDLER
             const saveVitals = (e, patientId) => {
                 e.preventDefault();
                 const form = e.target;
@@ -454,7 +462,6 @@
                 setVitalsModal(null);
             };
 
-            // SEPARATE SAVE CBG HANDLER
             const saveCbg = (e, patientId) => {
                 e.preventDefault();
                 const form = e.target;
@@ -605,7 +612,7 @@
                                         <div>
                                             <label className="text-xs font-bold text-slate-700 mb-1.5 block">Select Attending / Resident</label>
                                             <select value={selectedDoctorName} onChange={(e) => setSelectedDoctorName(e.target.value)} className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-900 font-medium focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
-                                                {DOCTORS.map(d => <option key={d.name} value={d.name}>{d.name} ({d.title})</option>)}
+                                                {DOCTORS.map(d => <option key={d.name} value={d.name}>{d.name}</option>)}
                                             </select>
                                         </div>
                                         <div>
@@ -780,6 +787,7 @@
                                                                 patient.location === 'In OR' ? 'bg-red-50 text-red-700 border-red-200 animate-pulse' :
                                                                 patient.location.includes('X-Ray') || patient.location.includes('UTZ') || patient.location.includes('CT') ? 'bg-amber-50 text-amber-700 border-amber-200' :
                                                                 patient.location === 'Post-Op' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
+                                                                patient.location === 'Pre-Op' ? 'bg-cyan-50 text-cyan-700 border-cyan-200' :
                                                                 'bg-emerald-50 text-emerald-700 border-emerald-200'
                                                             }`}>
                                                                 📍 {patient.location}
@@ -931,7 +939,6 @@
 
                                                     {/* SEPARATE VITALS & CBG LOG SECTIONS */}
                                                     <div className="grid grid-cols-2 gap-2">
-                                                        {/* Vitals Log */}
                                                         <div className="bg-slate-100/70 p-3 rounded-xl border border-slate-200 space-y-1.5">
                                                             <div className="flex justify-between items-center">
                                                                 <span className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Vitals</span>
@@ -955,7 +962,6 @@
                                                             )}
                                                         </div>
 
-                                                        {/* CBG Log */}
                                                         <div className="bg-slate-100/70 p-3 rounded-xl border border-slate-200 space-y-1.5">
                                                             <div className="flex justify-between items-center">
                                                                 <span className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">CBG</span>
@@ -1019,12 +1025,12 @@
 
                                                     <div className="space-y-2 border-t border-slate-200 pt-3">
                                                         <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Update Location:</label>
-                                                        <div className="grid grid-cols-3 gap-1.5">
-                                                            {["In Ward", "In OR", "Post-Op", "X-Ray", "UTZ", "CT Scan"].map(loc => (
+                                                        <div className="grid grid-cols-4 gap-1">
+                                                            {["In Ward", "Pre-Op", "Post-Op", "In OR", "X-Ray", "UTZ", "CT Scan"].map(loc => (
                                                                 <button 
                                                                     key={loc}
                                                                     onClick={() => toggleLocation(patient.id, loc)}
-                                                                    className={`py-1.5 px-2 rounded-lg text-[11px] font-bold uppercase transition shadow-sm border ${patient.location === loc && !patient.isDischarged ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-600 hover:bg-slate-100 border-slate-300'}`}
+                                                                    className={`py-1.5 px-1 rounded-lg text-[10px] font-bold uppercase transition shadow-sm border ${patient.location === loc && !patient.isDischarged ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-600 hover:bg-slate-100 border-slate-300'}`}
                                                                 >
                                                                     {loc}
                                                                 </button>
