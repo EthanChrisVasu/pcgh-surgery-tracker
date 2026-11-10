@@ -42,10 +42,10 @@
 
         const { useState, useEffect } = React;
 
-        const CURRENT_VERSION = "v2.6.0";
+        const CURRENT_VERSION = "v2.7.0";
         const VERSION_LOG_NOTES = [
-            { category: "UI Cleanup", text: "Removed literal color text tags from badges and fully enforced 'SPECIAL WOUND CARE INSTRUCTIONS' headers on all patient cards." },
-            { category: "New Feature", text: "Added Version Log & Release Notes pop-up modal upon login for all clerks and doctors." },
+            { category: "Wound Care", text: "Added custom free-text input for doctors to write specialized wound care protocols." },
+            { category: "UI Cleanup", text: "Removed top-right 'X' from Version Log modal, retaining only the bottom confirmation button." },
             { category: "Patient Management", text: "Added Main Isolation Ward (Rooms 401–430) and universal Add Patient intake form." },
             { category: "Discharge Workflow", text: "MGH Discharge status includes a 24-hour auto-archive timer with warning prompts and undo support." }
         ];
@@ -273,16 +273,20 @@
                 syncPatients(prev => prev.map(pat => pat.id === id ? { ...pat, watcherName: newName.toUpperCase(), watcherPhone: newPhone } : pat));
             };
 
-            const updateWoundCareProtocol = (id, protocolType, timingAbbr) => {
+            const updateWoundCareProtocol = (id, protocolType, timingAbbr, customText = "") => {
                 const p = patients.find(pat => pat.id === id);
                 if (!p) return;
 
-                let baseText = "";
-                if (protocolType === 'BETADINE') baseText = "DRY WITH BETADINE";
-                else if (protocolType === 'DAKINS') baseText = "WET-TO-DRY WITH DAKIN'S SOLUTION";
-                else if (protocolType === 'THIRDS') baseText = "WET-TO-DRY WITH THIRD'S SOLUTION";
-
-                const finalCod = `${baseText} ${timingAbbr}`;
+                let finalCod = "";
+                if (protocolType === 'CUSTOM') {
+                    finalCod = customText.toUpperCase();
+                } else {
+                    let baseText = "";
+                    if (protocolType === 'BETADINE') baseText = "DRY WITH BETADINE";
+                    else if (protocolType === 'DAKINS') baseText = "WET-TO-DRY WITH DAKIN'S SOLUTION";
+                    else if (protocolType === 'THIRDS') baseText = "WET-TO-DRY WITH THIRD'S SOLUTION";
+                    finalCod = `${baseText} ${timingAbbr}`;
+                }
 
                 addNotification(`⚕️ ${activeUser} updated Special Wound Care Instructions to [${finalCod}] for ${p.name}.`, id);
                 syncPatients(prev => prev.map(pat => pat.id === id ? { ...pat, cod: finalCod, codTiming: timingAbbr } : pat));
@@ -300,6 +304,14 @@
             const handleAddPatientSubmit = (e) => {
                 e.preventDefault();
                 const form = e.target;
+                
+                let finalCod = "";
+                if (form.codProtocol.value === 'CUSTOM') {
+                    finalCod = form.customCod.value.toUpperCase();
+                } else {
+                    finalCod = `${form.codProtocol.value} ${form.codTiming.value}`;
+                }
+
                 const newPatient = {
                     id: Date.now(),
                     name: form.patientName.value.toUpperCase(),
@@ -308,7 +320,7 @@
                     dx: form.patientDx.value.toUpperCase(),
                     surgery: form.patientSurgery.value ? form.patientSurgery.value.toUpperCase() : '',
                     monitor: form.patientMonitor.value.toUpperCase() || 'VSQ4',
-                    cod: `${form.codProtocol.value} ${form.codTiming.value}`,
+                    cod: finalCod,
                     codTiming: form.codTiming.value,
                     location: 'In Ward',
                     watcherName: form.watcherName.value.toUpperCase() || 'FAMILY WATCHER',
@@ -605,7 +617,7 @@
                         </div>
                     </header>
 
-                    {/* VERSION LOG POP-UP MODAL UPON LOGIN */}
+                    {/* VERSION LOG POP-UP MODAL UPON LOGIN (TOP-RIGHT X REMOVED) */}
                     {showVersionModal && (
                         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
                             <div className="bg-white border border-slate-200 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-200">
@@ -614,7 +626,6 @@
                                         <span className="bg-emerald-100 text-emerald-800 text-xs font-black px-2.5 py-1 rounded-full uppercase tracking-wider">{CURRENT_VERSION}</span>
                                         <h2 className="text-lg font-bold text-slate-900">Release Notes & Version Log</h2>
                                     </div>
-                                    <button onClick={() => setShowVersionModal(false)} className="text-slate-400 hover:text-slate-600 font-bold text-xl px-2">✕</button>
                                 </div>
                                 <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
                                     {VERSION_LOG_NOTES.map((note, index) => (
@@ -753,7 +764,7 @@
                                                         </span>
                                                     </div>
                                                     
-                                                    {/* COLOR-CODED PROTOCOL BADGE DISPLAY (CLEANED OF LITERAL TEXT TAGS) */}
+                                                    {/* CLEAN COLOR-CODED PROTOCOL BADGE DISPLAY (WITHOUT LITERAL TEXT TAGS) */}
                                                     <div className="flex items-center gap-2">
                                                         {patient.cod && patient.cod.includes("BETADINE") ? (
                                                             <span className="bg-amber-100 text-amber-900 border border-amber-300 px-3 py-1.5 rounded-lg font-bold uppercase text-xs flex items-center gap-2 shadow-sm">
@@ -770,34 +781,56 @@
                                                         )}
                                                     </div>
 
-                                                    {/* DOCTOR SELECTORS FOR PROTOCOL & TIMING */}
+                                                    {/* DOCTOR SELECTORS FOR PROTOCOL, TIMING & CUSTOM INPUT */}
                                                     {userRole === 'doctor' && (
-                                                        <div className="grid grid-cols-2 gap-2 pt-1 bg-white p-2.5 rounded-lg border border-slate-200">
-                                                            <div>
-                                                                <label className="text-[10px] font-bold text-slate-500 block mb-1 uppercase">Protocol Type</label>
-                                                                <select 
-                                                                    value={patient.cod && patient.cod.includes("BETADINE") ? "BETADINE" : patient.cod && patient.cod.includes("THIRD'S") ? "THIRDS" : "DAKINS"}
-                                                                    onChange={(e) => updateWoundCareProtocol(patient.id, e.target.value, patient.codTiming || "OD")}
-                                                                    className="w-full bg-slate-50 border border-slate-300 rounded px-2 py-1 text-xs font-bold uppercase text-slate-800 focus:outline-none"
-                                                                >
-                                                                    <option value="DAKINS">Dakin's Solution (White)</option>
-                                                                    <option value="BETADINE">Betadine OD (Brown)</option>
-                                                                    <option value="THIRDS">Third's Solution (Orange)</option>
-                                                                </select>
+                                                        <div className="space-y-2 pt-1 bg-white p-2.5 rounded-lg border border-slate-200">
+                                                            <div className="grid grid-cols-2 gap-2">
+                                                                <div>
+                                                                    <label className="text-[10px] font-bold text-slate-500 block mb-1 uppercase">Protocol Type</label>
+                                                                    <select 
+                                                                        value={patient.cod && patient.cod.includes("BETADINE") ? "BETADINE" : patient.cod && patient.cod.includes("THIRD'S") ? "THIRDS" : patient.cod && patient.cod.includes("DAKIN") ? "DAKINS" : "CUSTOM"}
+                                                                        onChange={(e) => {
+                                                                            if(e.target.value === 'CUSTOM') {
+                                                                                updateWoundCareProtocol(patient.id, 'CUSTOM', '', patient.cod || '');
+                                                                            } else {
+                                                                                updateWoundCareProtocol(patient.id, e.target.value, patient.codTiming || "OD");
+                                                                            }
+                                                                        }}
+                                                                        className="w-full bg-slate-50 border border-slate-300 rounded px-2 py-1 text-xs font-bold uppercase text-slate-800 focus:outline-none"
+                                                                    >
+                                                                        <option value="DAKINS">Dakin's Solution (White)</option>
+                                                                        <option value="BETADINE">Betadine OD (Brown)</option>
+                                                                        <option value="THIRDS">Third's Solution (Orange)</option>
+                                                                        <option value="CUSTOM">Custom Free-Text</option>
+                                                                    </select>
+                                                                </div>
+                                                                <div>
+                                                                    <label className="text-[10px] font-bold text-slate-500 block mb-1 uppercase">Timing Abbr</label>
+                                                                    <select 
+                                                                        value={patient.codTiming || "OD"}
+                                                                        onChange={(e) => {
+                                                                            const curType = patient.cod && patient.cod.includes("BETADINE") ? "BETADINE" : patient.cod && patient.cod.includes("THIRD'S") ? "THIRDS" : "DAKINS";
+                                                                            updateWoundCareProtocol(patient.id, curType, e.target.value);
+                                                                        }}
+                                                                        className="w-full bg-slate-50 border border-slate-300 rounded px-2 py-1 text-xs font-bold uppercase text-slate-800 focus:outline-none"
+                                                                    >
+                                                                        {TIMING_ABBRS.map(t => <option key={t} value={t}>{t}</option>)}
+                                                                    </select>
+                                                                </div>
                                                             </div>
-                                                            <div>
-                                                                <label className="text-[10px] font-bold text-slate-500 block mb-1 uppercase">Timing Abbr</label>
-                                                                <select 
-                                                                    value={patient.codTiming || "OD"}
-                                                                    onChange={(e) => {
-                                                                        const currentType = patient.cod && patient.cod.includes("BETADINE") ? "BETADINE" : patient.cod && patient.cod.includes("THIRD'S") ? "THIRDS" : "DAKINS";
-                                                                        updateWoundCareProtocol(patient.id, currentType, e.target.value);
-                                                                    }}
-                                                                    className="w-full bg-slate-50 border border-slate-300 rounded px-2 py-1 text-xs font-bold uppercase text-slate-800 focus:outline-none"
-                                                                >
-                                                                    {TIMING_ABBRS.map(t => <option key={t} value={t}>{t}</option>)}
-                                                                </select>
-                                                            </div>
+                                                            {/* CUSTOM EDITABLE TEXT BOX */}
+                                                            {(!patient.cod || (!patient.cod.includes("BETADINE") && !patient.cod.includes("THIRD'S") && !patient.cod.includes("DAKIN"))) && (
+                                                                <div>
+                                                                    <label className="text-[10px] font-bold text-slate-500 block mb-1 uppercase">Custom Protocol Instruction</label>
+                                                                    <input 
+                                                                        type="text"
+                                                                        value={patient.cod || ""}
+                                                                        onChange={(e) => updateWoundCareProtocol(patient.id, 'CUSTOM', '', e.target.value)}
+                                                                        placeholder="ENTER CUSTOM WOUND CARE..."
+                                                                        className="w-full bg-slate-50 border border-slate-300 rounded px-2 py-1 text-xs font-bold uppercase text-slate-800 focus:outline-none"
+                                                                    />
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     )}
 
@@ -986,10 +1019,18 @@
                                     <div className="grid grid-cols-2 gap-3">
                                         <div>
                                             <label className="font-bold text-slate-700 mb-1 block">Special Wound Care Instructions</label>
-                                            <select name="codProtocol" className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-xs font-medium uppercase focus:outline-none focus:border-blue-500">
+                                            <select name="codProtocol" onChange={(e) => {
+                                                const customInput = document.getElementById('addCustomCodBox');
+                                                if(e.target.value === 'CUSTOM') {
+                                                    customInput.style.display = 'block';
+                                                } else {
+                                                    customInput.style.display = 'none';
+                                                }
+                                            }} className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-xs font-medium uppercase focus:outline-none focus:border-blue-500">
                                                 <option value="WET-TO-DRY WITH DAKIN'S SOLUTION">Dakin's Solution (White)</option>
                                                 <option value="DRY WITH BETADINE">Betadine OD (Brown)</option>
                                                 <option value="WET-TO-DRY WITH THIRD'S SOLUTION">Third's Solution (Orange)</option>
+                                                <option value="CUSTOM">Custom Free-Text</option>
                                             </select>
                                         </div>
                                         <div>
@@ -998,6 +1039,11 @@
                                                 {TIMING_ABBRS.map(t => <option key={t} value={t}>{t}</option>)}
                                             </select>
                                         </div>
+                                    </div>
+
+                                    <div id="addCustomCodBox" style={{display: 'none'}}>
+                                        <label className="font-bold text-slate-700 mb-1 block">Custom Protocol Instruction</label>
+                                        <input name="customCod" type="text" placeholder="ENTER CUSTOM WOUND CARE..." className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-sm font-medium uppercase focus:outline-none focus:border-blue-500" />
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-3">
