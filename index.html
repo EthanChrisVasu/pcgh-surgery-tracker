@@ -42,10 +42,10 @@
 
         const { useState, useEffect } = React;
 
-        const CURRENT_VERSION = "v3.1.0";
+        const CURRENT_VERSION = "v3.2.0";
         const VERSION_LOG_NOTES = [
-            { category: "Wound Care Toggle", text: "Added 'Wound Care Needed / Monitor Only' toggle switch on all patient cards for cases requiring no special wound care." },
-            { category: "Wound Care UI", text: "Separated Special Wound Care Instructions into its own independent editable box with an edit pencil." },
+            { category: "Vitals & CBG", text: "Separated Vital Signs and CBG into completely independent logging buttons, schedules, and history logs for all patients." },
+            { category: "Wound Care Toggle", text: "Added 'Wound Care Needed / Monitor Only' toggle switch on all patient cards." },
             { category: "Discharge Workflow", text: "MGH Discharge status includes a 24-hour auto-archive timer with warning prompts and undo support." }
         ];
 
@@ -63,29 +63,29 @@
         ];
 
         const INITIAL_PATIENTS = [
-            { id: 1, name: "Pascual, Gervacio (9/M)", ward: "PEDIATRICS SX WARD", room: "", dx: "Acute Appendicitis", surgery: "Appendectomy", monitor: "VSQ4", cod: "DRY WITH BETADINE OD", codTiming: "OD", location: "Post-Op", watcherName: "Parent / Guardian", watcherPhone: "0917-550-0101", isPostAmputation: true, needsWoundCare: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
-            { id: 2, name: "De Guzman, Lolita (76/F)", ward: "FEMALE SURGERY WARD", room: "", dx: "Femoral Neck Fracture (L) sec to Fall", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0102", isPostAmputation: false, needsWoundCare: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
-            { id: 3, name: "Baco, Kristian (34/F)", ward: "FEMALE SURGERY WARD", room: "", dx: "Femoral Neck Fracture (L)", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0103", isPostAmputation: false, needsWoundCare: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
-            { id: 4, name: "Menju, Rebecca Ibasco (70/F)", ward: "FEMALE SURGERY WARD", room: "", dx: "Partial Gut Obstruction sec to Sigmoid Mass", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0104", isPostAmputation: false, needsWoundCare: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
-            { id: 5, name: "Cajeda, Maybeline (34/F)", ward: "FEMALE SURGERY WARD", room: "", dx: "Multiple Injuries sec to VA (Laceration (L) Leg; Femoral Fracture (L))", surgery: "", monitor: "VSQ4", cod: "DRY WITH BETADINE OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0105", isPostAmputation: true, needsWoundCare: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
-            { id: 6, name: "Peralta, Reymark (28/M)", ward: "MALE SURGERY WARD", room: "", dx: "Multiple Injuries sec to VA (Femoral Shaft Fracture (L); Abrasion (L) Knee and Thigh)", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0106", isPostAmputation: false, needsWoundCare: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
-            { id: 7, name: "Fernando, Carlos Cañamo (63/M)", ward: "MALE SURGERY WARD", room: "", dx: "T/C Gastric Outlet Obstruction sec to G1 Mass", surgery: "", monitor: "VSQ4 | CBG: TID", cod: "DRY WITH BETADINE OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0107", isPostAmputation: true, needsWoundCare: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
-            { id: 8, name: "Villanueva, Vidal Alberto (51/M)", ward: "MALE SURGERY WARD", room: "", dx: "T/C Open Fracture with Dislocation, Tibia-Fibula (R) sec to RCI", surgery: "", monitor: "VSQ4", cod: "DRY WITH BETADINE OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0108", isPostAmputation: true, needsWoundCare: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
-            { id: 9, name: "Julom, El Quinwell", ward: "MALE SURGERY WARD", room: "", dx: "Stab Wound Abdomen", surgery: "Exploratory Laparotomy", monitor: "VSQ4 | JP Drain | NGT | Urine Output", cod: "DRY WITH BETADINE OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0109", isPostAmputation: true, needsWoundCare: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
-            { id: 10, name: "Montano, Luzviminda (57/F)", ward: "ENT / OPHTHA WARD", room: "", dx: "Sigmoid Adenocarcinoma Stage 3, Colovesical Fistula", surgery: "Colostomy", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0110", isPostAmputation: false, needsWoundCare: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
-            { id: 11, name: "Latumbo Jr., Zosimo (70/M)", ward: "ISOLATION SURGERY WARD", room: "", dx: "DM-2 Uncontrolled, Cellulitis with Wet Gangrene 3rd & 4th Digits (L) Foot", surgery: "BKA (Below-Knee Amputation)", monitor: "VSQ4 | CBG: TID", cod: "DRY WITH BETADINE OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0111", isPostAmputation: true, needsWoundCare: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
-            { id: 12, name: "Cabangbang, Ofelia (66/F)", ward: "ISOLATION SURGERY WARD", room: "", dx: "Diabetic Foot (R)", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0112", isPostAmputation: true, needsWoundCare: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
-            { id: 13, name: "Eribal, Zandro Ferrer (54/M)", ward: "ISOLATION SURGERY WARD", room: "", dx: "Non-healing Wound (L) Thigh, T2 DM", surgery: "", monitor: "VSQ2 | CBG: Q1", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0113", isPostAmputation: false, needsWoundCare: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
-            { id: 14, name: "Quitain, Rodel Badrina (52/M)", ward: "ISOLATION SURGERY WARD", room: "", dx: "Non-healing Wound (L) Heel (Note: presence of maggots)", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH THIRD'S SOLUTION OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0114", isPostAmputation: false, needsWoundCare: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
-            { id: 15, name: "Manlangit, Allan (44/M)", ward: "ISOLATION SURGERY WARD", room: "", dx: "Sepsis sec to Decubitus Ulcer Grade IV", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0115", isPostAmputation: false, needsWoundCare: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
-            { id: 16, name: "Caballero, Daniel Seth", ward: "SURGICAL SUITE ROOM", room: "", dx: "Fracture, Middle 3rd Humerus (R)", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0116", isPostAmputation: false, needsWoundCare: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
-            { id: 17, name: "Buenviaje, Nilda Cajipo (69/F)", ward: "CICU", room: "", dx: "Diabetic Foot (R)", surgery: "", monitor: "VSQ1 | CBG: TID", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0117", isPostAmputation: true, needsWoundCare: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
-            { id: 18, name: "Lumandez, Pablito Jr.", ward: "CICU", room: "", dx: "Diabetic Foot / Wound", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0118", isPostAmputation: false, needsWoundCare: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
-            { id: 19, name: "Zuniga", ward: "IM WARD", room: "", dx: "Sepsis sec to Sacral Ulcers", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0119", isPostAmputation: false, needsWoundCare: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
-            { id: 20, name: "Atanante, Jennifer", ward: "IM WARD", room: "", dx: "Cellulitis / Wound Care", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0120", isPostAmputation: false, needsWoundCare: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
-            { id: 21, name: "Garrido", ward: "IM WARD", room: "", dx: "Sacral Ulcers", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0121", isPostAmputation: false, needsWoundCare: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
-            { id: 22, name: "Ellaso, Eric (56/M)", ward: "IM WARD", room: "", dx: "Wound Care", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0122", isPostAmputation: false, needsWoundCare: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
-            { id: 23, name: "Castillejos, Draven Mell (2/M)", ward: "PEDIATRIC WARD", room: "", dx: "Perianal Cellulitis/Abscess, T/C Sepsis, T/C ALL", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "In Ward", watcherName: "Parent / Guardian", watcherPhone: "0917-550-0123", isPostAmputation: false, needsWoundCare: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null }
+            { id: 1, name: "Pascual, Gervacio (9/M)", ward: "PEDIATRICS SX WARD", room: "", dx: "Acute Appendicitis", surgery: "Appendectomy", monitor: "VSQ4", cod: "DRY WITH BETADINE OD", codTiming: "OD", location: "Post-Op", watcherName: "Parent / Guardian", watcherPhone: "0917-550-0101", isPostAmputation: true, needsWoundCare: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], cbgHistory: [], isDischarged: false, dischargeTimestamp: null },
+            { id: 2, name: "De Guzman, Lolita (76/F)", ward: "FEMALE SURGERY WARD", room: "", dx: "Femoral Neck Fracture (L) sec to Fall", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0102", isPostAmputation: false, needsWoundCare: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], cbgHistory: [], isDischarged: false, dischargeTimestamp: null },
+            { id: 3, name: "Baco, Kristian (34/F)", ward: "FEMALE SURGERY WARD", room: "", dx: "Femoral Neck Fracture (L)", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0103", isPostAmputation: false, needsWoundCare: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], cbgHistory: [], isDischarged: false, dischargeTimestamp: null },
+            { id: 4, name: "Menju, Rebecca Ibasco (70/F)", ward: "FEMALE SURGERY WARD", room: "", dx: "Partial Gut Obstruction sec to Sigmoid Mass", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0104", isPostAmputation: false, needsWoundCare: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], cbgHistory: [], isDischarged: false, dischargeTimestamp: null },
+            { id: 5, name: "Cajeda, Maybeline (34/F)", ward: "FEMALE SURGERY WARD", room: "", dx: "Multiple Injuries sec to VA (Laceration (L) Leg; Femoral Fracture (L))", surgery: "", monitor: "VSQ4", cod: "DRY WITH BETADINE OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0105", isPostAmputation: true, needsWoundCare: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], cbgHistory: [], isDischarged: false, dischargeTimestamp: null },
+            { id: 6, name: "Peralta, Reymark (28/M)", ward: "MALE SURGERY WARD", room: "", dx: "Multiple Injuries sec to VA (Femoral Shaft Fracture (L); Abrasion (L) Knee and Thigh)", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0106", isPostAmputation: false, needsWoundCare: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], cbgHistory: [], isDischarged: false, dischargeTimestamp: null },
+            { id: 7, name: "Fernando, Carlos Cañamo (63/M)", ward: "MALE SURGERY WARD", room: "", dx: "T/C Gastric Outlet Obstruction sec to G1 Mass", surgery: "", monitor: "VSQ4 | CBG: TID", cod: "DRY WITH BETADINE OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0107", isPostAmputation: true, needsWoundCare: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], cbgHistory: [], isDischarged: false, dischargeTimestamp: null },
+            { id: 8, name: "Villanueva, Vidal Alberto (51/M)", ward: "MALE SURGERY WARD", room: "", dx: "T/C Open Fracture with Dislocation, Tibia-Fibula (R) sec to RCI", surgery: "", monitor: "VSQ4", cod: "DRY WITH BETADINE OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0108", isPostAmputation: true, needsWoundCare: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], cbgHistory: [], isDischarged: false, dischargeTimestamp: null },
+            { id: 9, name: "Julom, El Quinwell", ward: "MALE SURGERY WARD", room: "", dx: "Stab Wound Abdomen", surgery: "Exploratory Laparotomy", monitor: "VSQ4 | JP Drain | NGT | Urine Output", cod: "DRY WITH BETADINE OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0109", isPostAmputation: true, needsWoundCare: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], cbgHistory: [], isDischarged: false, dischargeTimestamp: null },
+            { id: 10, name: "Montano, Luzviminda (57/F)", ward: "ENT / OPHTHA WARD", room: "", dx: "Sigmoid Adenocarcinoma Stage 3, Colovesical Fistula", surgery: "Colostomy", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0110", isPostAmputation: false, needsWoundCare: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], cbgHistory: [], isDischarged: false, dischargeTimestamp: null },
+            { id: 11, name: "Latumbo Jr., Zosimo (70/M)", ward: "ISOLATION SURGERY WARD", room: "", dx: "DM-2 Uncontrolled, Cellulitis with Wet Gangrene 3rd & 4th Digits (L) Foot", surgery: "BKA (Below-Knee Amputation)", monitor: "VSQ4 | CBG: TID", cod: "DRY WITH BETADINE OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0111", isPostAmputation: true, needsWoundCare: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], cbgHistory: [], isDischarged: false, dischargeTimestamp: null },
+            { id: 12, name: "Cabangbang, Ofelia (66/F)", ward: "ISOLATION SURGERY WARD", room: "", dx: "Diabetic Foot (R)", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0112", isPostAmputation: true, needsWoundCare: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], cbgHistory: [], isDischarged: false, dischargeTimestamp: null },
+            { id: 13, name: "Eribal, Zandro Ferrer (54/M)", ward: "ISOLATION SURGERY WARD", room: "", dx: "Non-healing Wound (L) Thigh, T2 DM", surgery: "", monitor: "VSQ2 | CBG: Q1", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0113", isPostAmputation: false, needsWoundCare: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], cbgHistory: [], isDischarged: false, dischargeTimestamp: null },
+            { id: 14, name: "Quitain, Rodel Badrina (52/M)", ward: "ISOLATION SURGERY WARD", room: "", dx: "Non-healing Wound (L) Heel (Note: presence of maggots)", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH THIRD'S SOLUTION OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0114", isPostAmputation: false, needsWoundCare: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], cbgHistory: [], isDischarged: false, dischargeTimestamp: null },
+            { id: 15, name: "Manlangit, Allan (44/M)", ward: "ISOLATION SURGERY WARD", room: "", dx: "Sepsis sec to Decubitus Ulcer Grade IV", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0115", isPostAmputation: false, needsWoundCare: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], cbgHistory: [], isDischarged: false, dischargeTimestamp: null },
+            { id: 16, name: "Caballero, Daniel Seth", ward: "SURGICAL SUITE ROOM", room: "", dx: "Fracture, Middle 3rd Humerus (R)", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0116", isPostAmputation: false, needsWoundCare: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], cbgHistory: [], isDischarged: false, dischargeTimestamp: null },
+            { id: 17, name: "Buenviaje, Nilda Cajipo (69/F)", ward: "CICU", room: "", dx: "Diabetic Foot (R)", surgery: "", monitor: "VSQ1 | CBG: TID", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0117", isPostAmputation: true, needsWoundCare: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], cbgHistory: [], isDischarged: false, dischargeTimestamp: null },
+            { id: 18, name: "Lumandez, Pablito Jr.", ward: "CICU", room: "", dx: "Diabetic Foot / Wound", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0118", isPostAmputation: false, needsWoundCare: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], cbgHistory: [], isDischarged: false, dischargeTimestamp: null },
+            { id: 19, name: "Zuniga", ward: "IM WARD", room: "", dx: "Sepsis sec to Sacral Ulcers", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0119", isPostAmputation: false, needsWoundCare: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], cbgHistory: [], isDischarged: false, dischargeTimestamp: null },
+            { id: 20, name: "Atanante, Jennifer", ward: "IM WARD", room: "", dx: "Cellulitis / Wound Care", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0120", isPostAmputation: false, needsWoundCare: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], cbgHistory: [], isDischarged: false, dischargeTimestamp: null },
+            { id: 21, name: "Garrido", ward: "IM WARD", room: "", dx: "Sacral Ulcers", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0121", isPostAmputation: false, needsWoundCare: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], cbgHistory: [], isDischarged: false, dischargeTimestamp: null },
+            { id: 22, name: "Ellaso, Eric (56/M)", ward: "IM WARD", room: "", dx: "Wound Care", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0122", isPostAmputation: false, needsWoundCare: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], cbgHistory: [], isDischarged: false, dischargeTimestamp: null },
+            { id: 23, name: "Castillejos, Draven Mell (2/M)", ward: "PEDIATRIC WARD", room: "", dx: "Perianal Cellulitis/Abscess, T/C Sepsis, T/C ALL", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "In Ward", watcherName: "Parent / Guardian", watcherPhone: "0917-550-0123", isPostAmputation: false, needsWoundCare: true, codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], cbgHistory: [], isDischarged: false, dischargeTimestamp: null }
         ];
 
         const DOCTORS = [
@@ -132,8 +132,10 @@
             // Modals
             const [orderModal, setOrderModal] = useState(null); 
             const [viewOrdersModal, setViewOrdersModal] = useState(null); 
-            const [vitalsModal, setVitalsModal] = useState(null); 
+            const [vitalsModal, setVitalsModal] = useState(null); // patient object for Vitals
+            const [cbgModal, setCbgModal] = useState(null);       // patient object for CBG
             const [viewVitalsModal, setViewVitalsModal] = useState(null); 
+            const [viewCbgModal, setViewCbgModal] = useState(null);       
             const [addPatientModal, setAddPatientModal] = useState(false);
 
             useEffect(() => {
@@ -229,9 +231,9 @@
             };
 
             const handleDailyReset = () => {
-                if (window.confirm("🚨 Reset all COD statuses, images, and vitals logs for a new day? Patient orders and locations remain safe.")) {
-                    syncPatients(prev => prev.map(p => ({ ...p, codDone: false, codImages: [], vitalsHistory: [] })));
-                    addNotification(`🌅 ${activeUser} performed a New Day Reset (Cleared COD tasks, photos, & vitals logs).`);
+                if (window.confirm("🚨 Reset all COD statuses, images, vitals, and CBG logs for a new day? Patient orders remain safe.")) {
+                    syncPatients(prev => prev.map(p => ({ ...p, codDone: false, codImages: [], vitalsHistory: [], cbgHistory: [] })));
+                    addNotification(`🌅 ${activeUser} performed a New Day Reset (Cleared COD, photos, vitals, & CBG logs).`);
                 }
             };
 
@@ -305,7 +307,6 @@
                 syncPatients(prev => prev.map(pat => pat.id === id ? { ...pat, isPostAmputation: newStatus } : pat));
             };
 
-            // Toggle between Wound Care Needed vs Monitor Only
             const toggleNeedsWoundCare = (id) => {
                 const p = patients.find(pat => pat.id === id);
                 if (!p) return;
@@ -345,6 +346,7 @@
                     codImages: [],
                     physicianOrders: [],
                     vitalsHistory: [],
+                    cbgHistory: [],
                     isDischarged: false,
                     dischargeTimestamp: null
                 };
@@ -417,6 +419,7 @@
                 }
             };
 
+            // SEPARATE SAVE VITALS HANDLER
             const saveVitals = (e, patientId) => {
                 e.preventDefault();
                 const form = e.target;
@@ -436,13 +439,11 @@
                     bp: form.bp.value || 'N/A',
                     hr: form.hr.value || 'N/A',
                     rr: form.rr.value || 'N/A',
-                    temp: form.temp.value || 'N/A',
-                    cbgVal: form.cbgVal.value ? `${form.cbgVal.value} MG/DL` : 'N/A',
-                    cbgTiming: form.cbgTiming.value.toUpperCase()
+                    temp: form.temp.value || 'N/A'
                 };
 
                 const patientName = patients.find(p => p.id === patientId)?.name;
-                addNotification(`📊 ${activeUser} logged Vitals & CBG for ${patientName} [${currentDateStr} - ${shiftName}].`, patientId);
+                addNotification(`📊 ${activeUser} logged Vitals for ${patientName} [${currentDateStr} - ${shiftName}].`, patientId);
 
                 syncPatients(prev => prev.map(p => {
                     if (p.id === patientId) {
@@ -451,6 +452,39 @@
                     return p;
                 }));
                 setVitalsModal(null);
+            };
+
+            // SEPARATE SAVE CBG HANDLER
+            const saveCbg = (e, patientId) => {
+                e.preventDefault();
+                const form = e.target;
+                
+                const now = new Date();
+                const hours = now.getHours();
+                const isAMShift = hours >= 7 && hours < 19;
+                const shiftName = isAMShift ? "AM SHIFT (07:00 AM - 07:00 PM)" : "PM SHIFT (07:00 PM - 07:00 AM)";
+                const currentDateStr = now.toLocaleDateString(); 
+
+                const newCbg = {
+                    id: Date.now(),
+                    timestamp: now.toLocaleTimeString(),
+                    dateStr: currentDateStr,
+                    shift: shiftName,
+                    loggedBy: activeUser,
+                    cbgVal: form.cbgVal.value ? `${form.cbgVal.value} MG/DL` : 'N/A',
+                    cbgTiming: form.cbgTiming.value.toUpperCase()
+                };
+
+                const patientName = patients.find(p => p.id === patientId)?.name;
+                addNotification(`🩸 ${activeUser} logged CBG for ${patientName} [${currentDateStr} - ${shiftName}].`, patientId);
+
+                syncPatients(prev => prev.map(p => {
+                    if (p.id === patientId) {
+                        return { ...p, cbgHistory: [newCbg, ...(p.cbgHistory || [])] };
+                    }
+                    return p;
+                }));
+                setCbgModal(null);
             };
 
             const toggleDischarge = (id) => {
@@ -772,7 +806,7 @@
                                                         )}
                                                     </div>
 
-                                                    {/* SPECIAL WOUND CARE INSTRUCTIONS BOX (WITH WOUND CARE NEEDED / MONITOR ONLY TOGGLE) */}
+                                                    {/* SPECIAL WOUND CARE INSTRUCTIONS BOX */}
                                                     <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100 space-y-3">
                                                         <div className="flex justify-between items-center text-xs">
                                                             <span className="font-bold text-slate-800 uppercase">SPECIAL WOUND CARE INSTRUCTIONS</span>
@@ -782,7 +816,7 @@
                                                             </span>
                                                         </div>
 
-                                                        {/* WOUND CARE NEEDED / MONITOR ONLY TOGGLE SWITCH */}
+                                                        {/* WOUND CARE NEEDED / MONITOR ONLY TOGGLE */}
                                                         <div className="flex items-center justify-between bg-white p-2 rounded-lg border border-slate-200">
                                                             <span className="text-[11px] font-bold text-slate-700 uppercase">Care Status:</span>
                                                             <button 
@@ -798,7 +832,6 @@
 
                                                         {needsWCs ? (
                                                             <>
-                                                                {/* COLOR-CODED PROTOCOL BADGE DISPLAY */}
                                                                 <div className="flex items-center gap-2">
                                                                     {patient.cod && patient.cod.includes("BETADINE") ? (
                                                                         <span className="bg-amber-100 text-amber-900 border border-amber-300 px-3 py-1.5 rounded-lg font-bold uppercase text-xs flex items-center gap-2 shadow-sm">
@@ -820,7 +853,6 @@
                                                                     )}
                                                                 </div>
 
-                                                                {/* DOCTOR CONTROLS: SEPARATE PROTOCOL DROPDOWN & DEDICATED EDITABLE BOX */}
                                                                 {userRole === 'doctor' && (
                                                                     <div className="space-y-2 pt-1 bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
                                                                         <div className="grid grid-cols-2 gap-2">
@@ -850,7 +882,6 @@
                                                                                 </select>
                                                                             </div>
                                                                         </div>
-                                                                        {/* DEDICATED EDITABLE BOX WITH PENCIL ICON */}
                                                                         <div>
                                                                             <label className="text-[10px] font-bold text-slate-500 block mb-1 uppercase">Custom Instruction Edit Box</label>
                                                                             <div className="flex items-center justify-between bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-300">
@@ -898,38 +929,55 @@
                                                         )}
                                                     </div>
 
-                                                    {/* VITALS & CBG LOG SECTION */}
-                                                    <div className="bg-slate-100/70 p-3.5 rounded-xl border border-slate-200 space-y-2">
-                                                        <div className="flex justify-between items-center">
-                                                            <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">Vital Signs & CBG Log</span>
-                                                            <div className="flex gap-1.5">
-                                                                {patient.vitalsHistory && patient.vitalsHistory.length > 0 && (
-                                                                    <button onClick={() => setViewVitalsModal(patient)} className="text-xs font-bold bg-white hover:bg-slate-50 text-slate-700 px-2.5 py-1 rounded shadow-sm border border-slate-300 transition">
-                                                                        View Log ({patient.vitalsHistory.length})
-                                                                    </button>
-                                                                )}
-                                                                {userRole === 'clerk' && (
-                                                                    <button onClick={() => setVitalsModal(patient)} className="text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1 rounded shadow-sm transition">
-                                                                        + Log
-                                                                    </button>
-                                                                )}
+                                                    {/* SEPARATE VITALS & CBG LOG SECTIONS */}
+                                                    <div className="grid grid-cols-2 gap-2">
+                                                        {/* Vitals Log */}
+                                                        <div className="bg-slate-100/70 p-3 rounded-xl border border-slate-200 space-y-1.5">
+                                                            <div className="flex justify-between items-center">
+                                                                <span className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Vitals</span>
+                                                                <div className="flex gap-1">
+                                                                    {patient.vitalsHistory && patient.vitalsHistory.length > 0 && (
+                                                                        <button onClick={() => setViewVitalsModal(patient)} className="text-[10px] font-bold bg-white text-slate-700 px-1.5 py-0.5 rounded border">Logs</button>
+                                                                    )}
+                                                                    {userRole === 'clerk' && (
+                                                                        <button onClick={() => setVitalsModal(patient)} className="text-[10px] font-bold bg-blue-600 text-white px-1.5 py-0.5 rounded">+ Log</button>
+                                                                    )}
+                                                                </div>
                                                             </div>
+                                                            {patient.vitalsHistory && patient.vitalsHistory.length > 0 ? (
+                                                                <div className="bg-white p-2 rounded border text-[11px] font-bold uppercase">
+                                                                    <div>BP: {patient.vitalsHistory[0].bp}</div>
+                                                                    <div>HR: {patient.vitalsHistory[0].hr} | T: {patient.vitalsHistory[0].temp}°C</div>
+                                                                    <div className="text-[9px] text-slate-400 font-normal pt-1">{patient.vitalsHistory[0].dateStr}</div>
+                                                                </div>
+                                                            ) : (
+                                                                <div className="text-[10px] text-slate-400 italic text-center py-1">No vitals</div>
+                                                            )}
                                                         </div>
-                                                        
-                                                        {patient.vitalsHistory && patient.vitalsHistory.length > 0 ? (
-                                                            <div className="bg-white p-2.5 rounded-lg border border-slate-200 text-xs space-y-1 shadow-sm">
-                                                                <div className="flex justify-between font-bold text-slate-900 border-b border-slate-100 pb-1 uppercase">
-                                                                    <span>BP: {patient.vitalsHistory[0].bp} | HR: {patient.vitalsHistory[0].hr} | RR: {patient.vitalsHistory[0].rr} | T: {patient.vitalsHistory[0].temp}°C</span>
-                                                                    <span className="text-blue-600 font-mono">{patient.vitalsHistory[0].cbgVal} ({patient.vitalsHistory[0].cbgTiming})</span>
-                                                                </div>
-                                                                <div className="text-[10px] text-slate-500 flex justify-between pt-0.5 font-medium uppercase">
-                                                                    <span>{patient.vitalsHistory[0].dateStr} • {patient.vitalsHistory[0].shift}</span>
-                                                                    <span>By: {patient.vitalsHistory[0].loggedBy}</span>
+
+                                                        {/* CBG Log */}
+                                                        <div className="bg-slate-100/70 p-3 rounded-xl border border-slate-200 space-y-1.5">
+                                                            <div className="flex justify-between items-center">
+                                                                <span className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">CBG</span>
+                                                                <div className="flex gap-1">
+                                                                    {patient.cbgHistory && patient.cbgHistory.length > 0 && (
+                                                                        <button onClick={() => setViewCbgModal(patient)} className="text-[10px] font-bold bg-white text-slate-700 px-1.5 py-0.5 rounded border">Logs</button>
+                                                                    )}
+                                                                    {userRole === 'clerk' && (
+                                                                        <button onClick={() => setCbgModal(patient)} className="text-[10px] font-bold bg-blue-600 text-white px-1.5 py-0.5 rounded">+ Log</button>
+                                                                    )}
                                                                 </div>
                                                             </div>
-                                                        ) : (
-                                                            <div className="text-[11px] text-slate-400 italic text-center py-1 uppercase">No vitals logged yet.</div>
-                                                        )}
+                                                            {patient.cbgHistory && patient.cbgHistory.length > 0 ? (
+                                                                <div className="bg-white p-2 rounded border text-[11px] font-bold uppercase">
+                                                                    <div className="text-blue-600 font-mono">{patient.cbgHistory[0].cbgVal}</div>
+                                                                    <div className="text-[10px] text-slate-600">{patient.cbgHistory[0].cbgTiming}</div>
+                                                                    <div className="text-[9px] text-slate-400 font-normal pt-1">{patient.cbgHistory[0].dateStr}</div>
+                                                                </div>
+                                                            ) : (
+                                                                <div className="text-[10px] text-slate-400 italic text-center py-1">No CBG logged</div>
+                                                            )}
+                                                        </div>
                                                     </div>
 
                                                     {/* PHYSICIAN'S ORDERS SECTION */}
@@ -1055,7 +1103,6 @@
                                         </div>
                                     </div>
                                     
-                                    {/* ADMIT PROTOCOL SELECTORS */}
                                     <div className="grid grid-cols-2 gap-3">
                                         <div>
                                             <label className="font-bold text-slate-700 mb-1 block">Special Wound Care Instructions</label>
@@ -1110,13 +1157,81 @@
                         </div>
                     )}
 
+                    {/* MODAL: LOG VITALS */}
+                    {vitalsModal && (
+                        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[95] flex items-center justify-center p-4">
+                            <div className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 uppercase">
+                                <div className="flex justify-between items-center">
+                                    <h2 className="text-lg font-bold text-slate-900">📊 LOG VITAL SIGNS</h2>
+                                    <button onClick={() => setVitalsModal(null)} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
+                                </div>
+                                <p className="text-xs text-slate-500 font-medium">{vitalsModal.name}</p>
+                                
+                                <form onSubmit={(e) => saveVitals(e, vitalsModal.id)} className="space-y-4">
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="text-xs font-bold text-slate-700 mb-1 block">BP (mmHg)</label>
+                                            <input name="bp" type="text" placeholder="120/80" className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-sm uppercase font-medium focus:outline-none focus:border-blue-500" />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-bold text-slate-700 mb-1 block">HR (bpm)</label>
+                                            <input name="hr" type="text" placeholder="80" className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-sm uppercase font-medium focus:outline-none focus:border-blue-500" />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-bold text-slate-700 mb-1 block">RR (cpm)</label>
+                                            <input name="rr" type="text" placeholder="20" className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-sm uppercase font-medium focus:outline-none focus:border-blue-500" />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-bold text-slate-700 mb-1 block">Temp (°C)</label>
+                                            <input name="temp" type="text" placeholder="36.5" className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-sm uppercase font-medium focus:outline-none focus:border-blue-500" />
+                                        </div>
+                                    </div>
+                                    <div className="pt-2 flex gap-3">
+                                        <button type="button" onClick={() => setVitalsModal(null)} className="flex-1 py-3 rounded-xl font-bold text-sm bg-slate-100 text-slate-600 hover:bg-slate-200 transition">CANCEL</button>
+                                        <button type="submit" className="flex-1 py-3 rounded-xl font-bold text-sm bg-blue-600 text-white hover:bg-blue-700 transition shadow-sm">SAVE VITALS</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* MODAL: LOG CBG */}
+                    {cbgModal && (
+                        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[95] flex items-center justify-center p-4">
+                            <div className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 uppercase">
+                                <div className="flex justify-between items-center">
+                                    <h2 className="text-lg font-bold text-slate-900">🩸 LOG CBG</h2>
+                                    <button onClick={() => setCbgModal(null)} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
+                                </div>
+                                <p className="text-xs text-slate-500 font-medium">{cbgModal.name}</p>
+                                
+                                <form onSubmit={(e) => saveCbg(e, cbgModal.id)} className="space-y-4">
+                                    <div>
+                                        <label className="text-xs font-bold text-slate-700 mb-1 block">CBG Level (mg/dL)</label>
+                                        <input name="cbgVal" type="number" placeholder="110" className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-sm uppercase font-medium focus:outline-none focus:border-blue-500" />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-bold text-slate-700 mb-1 block">Timing / Schedule</label>
+                                        <select name="cbgTiming" className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-xs font-medium uppercase focus:outline-none focus:border-blue-500">
+                                            {TIMING_ABBRS.map(t => <option key={t} value={t}>{t}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="pt-2 flex gap-3">
+                                        <button type="button" onClick={() => setCbgModal(null)} className="flex-1 py-3 rounded-xl font-bold text-sm bg-slate-100 text-slate-600 hover:bg-slate-200 transition">CANCEL</button>
+                                        <button type="submit" className="flex-1 py-3 rounded-xl font-bold text-sm bg-blue-600 text-white hover:bg-blue-700 transition shadow-sm">SAVE CBG</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+
                     {/* POPUP MODAL: VIEW ALL VITALS LOG */}
                     {viewVitalsModal && (
                         <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[90] flex items-center justify-center p-4">
                             <div className="bg-white border border-slate-200 rounded-3xl max-w-xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden uppercase">
                                 <div className="p-5 border-b border-slate-200 flex justify-between items-center bg-slate-900 text-white">
                                     <div>
-                                        <h2 className="text-lg font-bold">📊 COMPLETE VITALS & CBG LOG</h2>
+                                        <h2 className="text-lg font-bold">📊 COMPLETE VITALS LOG</h2>
                                         <p className="text-xs text-slate-400">{viewVitalsModal.name} • {viewVitalsModal.ward}</p>
                                     </div>
                                     <button onClick={() => setViewVitalsModal(null)} className="text-slate-400 hover:text-white font-bold text-xl px-2">✕</button>
@@ -1134,12 +1249,40 @@
                                                 <div>RR: <strong className="text-slate-900">{v.rr} CPM</strong></div>
                                                 <div>Temp: <strong className="text-slate-900">{v.temp}°C</strong></div>
                                             </div>
-                                            <div className="bg-white p-2.5 rounded-xl border border-slate-200 flex justify-between items-center">
-                                                <span>CBG LEVEL: <strong className="text-blue-600 font-mono text-sm">{v.cbgVal}</strong></span>
-                                                <span className="bg-amber-50 text-amber-700 px-2 py-0.5 rounded font-bold border border-amber-200 text-[11px]">{v.cbgTiming}</span>
-                                            </div>
                                             <div className="text-[10px] text-slate-400 text-right pt-0.5 font-medium">
                                                 LOGGED BY: {v.loggedBy}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* POPUP MODAL: VIEW ALL CBG LOG */}
+                    {viewCbgModal && (
+                        <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[90] flex items-center justify-center p-4">
+                            <div className="bg-white border border-slate-200 rounded-3xl max-w-xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden uppercase">
+                                <div className="p-5 border-b border-slate-200 flex justify-between items-center bg-slate-900 text-white">
+                                    <div>
+                                        <h2 className="text-lg font-bold">🩸 COMPLETE CBG LOG</h2>
+                                        <p className="text-xs text-slate-400">{viewCbgModal.name} • {viewCbgModal.ward}</p>
+                                    </div>
+                                    <button onClick={() => setViewCbgModal(null)} className="text-slate-400 hover:text-white font-bold text-xl px-2">✕</button>
+                                </div>
+                                <div className="p-6 overflow-y-auto flex-1 space-y-3">
+                                    {viewCbgModal.cbgHistory && viewCbgModal.cbgHistory.map(c => (
+                                        <div key={c.id} className="p-4 rounded-2xl border border-slate-200 bg-slate-50 text-xs space-y-2 shadow-sm">
+                                            <div className="flex justify-between font-bold text-slate-800 border-b border-slate-200 pb-1.5 items-center">
+                                                <span className="text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">{c.dateStr} — {c.shift}</span>
+                                                <span className="text-slate-400">{c.timestamp}</span>
+                                            </div>
+                                            <div className="bg-white p-2.5 rounded-xl border border-slate-200 flex justify-between items-center">
+                                                <span>CBG LEVEL: <strong className="text-blue-600 font-mono text-sm">{c.cbgVal}</strong></span>
+                                                <span className="bg-amber-50 text-amber-700 px-2 py-0.5 rounded font-bold border border-amber-200 text-[11px]">{c.cbgTiming}</span>
+                                            </div>
+                                            <div className="text-[10px] text-slate-400 text-right pt-0.5 font-medium">
+                                                LOGGED BY: {c.loggedBy}
                                             </div>
                                         </div>
                                     ))}
@@ -1179,7 +1322,7 @@
                                             {order.findings && <p><strong className="opacity-75">FINDINGS:</strong> {order.findings}</p>}
                                             {order.orders && <p><strong className="opacity-75">ORDERS/LABS:</strong> {order.orders}</p>}
                                             {order.editCount > 0 && (
-                                                <div className="text-[10px] italic opacity-75 font-semibold pt-1">
+                                                <div className="mt-1 text-[10px] italic opacity-75 font-semibold">
                                                     ✏️ EDITED ({order.editCount}/5) — {order.lastEdited}
                                                 </div>
                                             )}
@@ -1224,58 +1367,6 @@
                                         <button type="submit" className="flex-1 py-3 rounded-xl font-bold text-sm bg-blue-600 text-white hover:bg-blue-700 transition shadow-sm">
                                             {orderModal.editId ? "UPDATE ORDER" : "SAVE ORDER"}
                                         </button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* MODAL: LOG VITALS & CBG */}
-                    {vitalsModal && (
-                        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[95] flex items-center justify-center p-4">
-                            <div className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 uppercase">
-                                <div className="flex justify-between items-center">
-                                    <h2 className="text-lg font-bold text-slate-900">📊 LOG VITALS & CBG</h2>
-                                    <button onClick={() => setVitalsModal(null)} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
-                                </div>
-                                <p className="text-xs text-slate-500 font-medium">{vitalsModal.name}</p>
-                                
-                                <form onSubmit={(e) => saveVitals(e, vitalsModal.id)} className="space-y-4">
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <div>
-                                            <label className="text-xs font-bold text-slate-700 mb-1 block">BP (mmHg)</label>
-                                            <input name="bp" type="text" placeholder="120/80" className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-sm uppercase font-medium focus:outline-none focus:border-blue-500" />
-                                        </div>
-                                        <div>
-                                            <label className="text-xs font-bold text-slate-700 mb-1 block">HR (bpm)</label>
-                                            <input name="hr" type="text" placeholder="80" className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-sm uppercase font-medium focus:outline-none focus:border-blue-500" />
-                                        </div>
-                                        <div>
-                                            <label className="text-xs font-bold text-slate-700 mb-1 block">RR (cpm)</label>
-                                            <input name="rr" type="text" placeholder="20" className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-sm uppercase font-medium focus:outline-none focus:border-blue-500" />
-                                        </div>
-                                        <div>
-                                            <label className="text-xs font-bold text-slate-700 mb-1 block">Temp (°C)</label>
-                                            <input name="temp" type="text" placeholder="36.5" className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-sm uppercase font-medium focus:outline-none focus:border-blue-500" />
-                                        </div>
-                                    </div>
-
-                                    <div className="border-t border-slate-200 pt-3 space-y-3">
-                                        <div>
-                                            <label className="text-xs font-bold text-slate-700 mb-1 block">CBG Level (mg/dL)</label>
-                                            <input name="cbgVal" type="number" placeholder="110" className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-sm uppercase font-medium focus:outline-none focus:border-blue-500" />
-                                        </div>
-                                        <div>
-                                            <label className="text-xs font-bold text-slate-700 mb-1 block">Timing / Schedule</label>
-                                            <select name="cbgTiming" className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-xs font-medium uppercase focus:outline-none focus:border-blue-500">
-                                                {TIMING_ABBRS.map(t => <option key={t} value={t}>{t}</option>)}
-                                            </select>
-                                        </div>
-                                    </div>
-
-                                    <div className="pt-2 flex gap-3">
-                                        <button type="button" onClick={() => setVitalsModal(null)} className="flex-1 py-3 rounded-xl font-bold text-sm bg-slate-100 text-slate-600 hover:bg-slate-200 transition">CANCEL</button>
-                                        <button type="submit" className="flex-1 py-3 rounded-xl font-bold text-sm bg-blue-600 text-white hover:bg-blue-700 transition shadow-sm">SAVE VITALS & CBG</button>
                                     </div>
                                 </form>
                             </div>
