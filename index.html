@@ -28,7 +28,7 @@
             appId: "1:618435386767:web:311124fe9830604397bffa"
         };
 
-        // Initialize Firebase with a Safety Net to prevent crashes
+        // Initialize Firebase with a Safety Net
         let db = null;
         try {
             if (typeof firebase !== 'undefined') {
@@ -44,29 +44,29 @@
         const { useState, useEffect } = React;
 
         const INITIAL_PATIENTS = [
-            { id: 1, name: "Pascual, Gervacio (9/M)", ward: "PEDIATRICS SX WARD", dx: "Acute Appendicitis", surgery: "Appendectomy", monitor: "VSQ4", cod: "To be done on 11/10/26", location: "Post-Op", watcherName: "Parent / Guardian", watcherPhone: "0917-550-0101", isDiabetic: false, isPostAmputation: false, amputationType: "", codDone: false, codImage: null },
-            { id: 2, name: "De Guzman, Lolita (76/F)", ward: "FEMALE SURGERY WARD", dx: "Femoral Neck Fracture (L) sec to Fall", surgery: "", monitor: "VSQ4", cod: "", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0102", isDiabetic: false, isPostAmputation: false, amputationType: "", codDone: false, codImage: null },
-            { id: 3, name: "Baco, Kristian (34/F)", ward: "FEMALE SURGERY WARD", dx: "Femoral Neck Fracture (L)", surgery: "", monitor: "VSQ4", cod: "", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0103", isDiabetic: false, isPostAmputation: false, amputationType: "", codDone: false, codImage: null },
-            { id: 4, name: "Menju, Rebecca Ibasco (70/F)", ward: "FEMALE SURGERY WARD", dx: "Partial Gut Obstruction sec to Sigmoid Mass", surgery: "", monitor: "VSQ4", cod: "", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0104", isDiabetic: false, isPostAmputation: false, amputationType: "", codDone: false, codImage: null },
-            { id: 5, name: "Cajeda, Maybeline (34/F)", ward: "FEMALE SURGERY WARD", dx: "Multiple Injuries sec to VA (Laceration (L) Leg; Femoral Fracture (L))", surgery: "", monitor: "VSQ4", cod: "Dry with Betadine", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0105", isDiabetic: false, isPostAmputation: false, amputationType: "", codDone: false, codImage: null },
-            { id: 6, name: "Peralta, Reymark (28/M)", ward: "MALE SURGERY WARD", dx: "Multiple Injuries sec to VA (Femoral Shaft Fracture (L); Abrasion (L) Knee and Thigh)", surgery: "", monitor: "VSQ4", cod: "", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0106", isDiabetic: false, isPostAmputation: false, amputationType: "", codDone: false, codImage: null },
-            { id: 7, name: "Fernando, Carlos Cañamo (63/M)", ward: "MALE SURGERY WARD", dx: "T/C Gastric Outlet Obstruction sec to G1 Mass", surgery: "", monitor: "VSQ4 | CBG: TID", cod: "Dry with Betadine. (Note: Be careful not to remove the tube during COD).", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0107", isDiabetic: false, isPostAmputation: false, amputationType: "", codDone: false, codImage: null },
-            { id: 8, name: "Villanueva, Vidal Alberto (51/M)", ward: "MALE SURGERY WARD", dx: "T/C Open Fracture with Dislocation, Tibia-Fibula (R) sec to RCI", surgery: "", monitor: "VSQ4", cod: "Dry with Betadine. (Note: Do not remove cast).", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0108", isDiabetic: false, isPostAmputation: false, amputationType: "", codDone: false, codImage: null },
-            { id: 9, name: "Julom, El Quinwell", ward: "MALE SURGERY WARD", dx: "Stab Wound Abdomen", surgery: "Exploratory Laparotomy", monitor: "VSQ4 | JP Drain | NGT | Urine Output", cod: "Dry with Betadine", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0109", isDiabetic: false, isPostAmputation: false, amputationType: "", codDone: false, codImage: null },
-            { id: 10, name: "Montano, Luzviminda (57/F)", ward: "ENT / OPHTHA WARD", dx: "Sigmoid Adenocarcinoma Stage 3, Colovesical Fistula", surgery: "Colostomy", monitor: "VSQ4", cod: "Dressing done at 7:00 AM; JP drain and colostomy drain per shift", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0110", isDiabetic: false, isPostAmputation: false, amputationType: "", codDone: false, codImage: null },
-            { id: 11, name: "Latumbo Jr., Zosimo (70/M)", ward: "ISOLATION SURGERY WARD", dx: "DM-2 Uncontrolled, Cellulitis with Wet Gangrene 3rd & 4th Digits (L) Foot", surgery: "BKA (Below-Knee Amputation)", monitor: "VSQ4 | CBG: TID", cod: "Clean closed surgical stump with Povidone-Iodine (Betadine), pat dry, and wrap with dry sterile gauze & elastic bandage OD.", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0111", isDiabetic: true, isPostAmputation: true, amputationType: "BKA", codDone: false, codImage: null },
-            { id: 12, name: "Cabangbang, Ofelia (66/F)", ward: "ISOLATION SURGERY WARD", dx: "Diabetic Foot (R)", surgery: "", monitor: "VSQ4", cod: "Wet-to-dry with Dakin's Solution OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0112", isDiabetic: true, isPostAmputation: false, amputationType: "", codDone: false, codImage: null },
-            { id: 13, name: "Eribal, Zandro Ferrer (54/M)", ward: "ISOLATION SURGERY WARD", dx: "Non-healing Wound (L) Thigh, T2 DM", surgery: "", monitor: "VSQ2 | CBG: Q1", cod: "Wet-to-dry (Ask NOD).", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0113", isDiabetic: true, isPostAmputation: false, amputationType: "", codDone: false, codImage: null },
-            { id: 14, name: "Quitain, Rodel Badrina (52/M)", ward: "ISOLATION SURGERY WARD", dx: "Non-healing Wound (L) Heel (Note: presence of maggots)", surgery: "", monitor: "VSQ4", cod: "Wet-to-dry with Third's Solution OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0114", isDiabetic: false, isPostAmputation: false, amputationType: "", codDone: false, codImage: null },
-            { id: 15, name: "Manlangit, Allan (44/M)", ward: "ISOLATION SURGERY WARD", dx: "Sepsis sec to Decubitus Ulcer Grade IV", surgery: "", monitor: "VSQ4", cod: "Wet-to-dry with Dakin's Solution", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0115", isDiabetic: false, isPostAmputation: false, amputationType: "", codDone: false, codImage: null },
-            { id: 16, name: "Caballero, Daniel Seth", ward: "SURGICAL SUITE ROOM", dx: "Fracture, Middle 3rd Humerus (R)", surgery: "", monitor: "VSQ4", cod: "", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0116", isDiabetic: false, isPostAmputation: false, amputationType: "", codDone: false, codImage: null },
-            { id: 17, name: "Buenviaje, Nilda Cajipo (69/F)", ward: "CICU", dx: "Diabetic Foot (R)", surgery: "", monitor: "VSQ1 | CBG: TID", cod: "Wet-to-dry with Dakin's Solution OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0117", isDiabetic: true, isPostAmputation: false, amputationType: "", codDone: false, codImage: null },
-            { id: 18, name: "Lumandez, Pablito Jr.", ward: "CICU", dx: "Diabetic Foot / Wound", surgery: "", monitor: "VSQ4", cod: "Wet-to-dry with Dakin's Solution OD. (Note: Should be done during daytime).", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0118", isDiabetic: true, isPostAmputation: false, amputationType: "", codDone: false, codImage: null },
-            { id: 19, name: "Zuniga", ward: "IM WARD", dx: "Sepsis sec to Sacral Ulcers", surgery: "", monitor: "VSQ4", cod: "Wet-to-dry with Dakin's Solution OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0119", isDiabetic: false, isPostAmputation: false, amputationType: "", codDone: false, codImage: null },
-            { id: 20, name: "Atanante, Jennifer", ward: "IM WARD", dx: "Cellulitis / Wound Care", surgery: "", monitor: "VSQ4", cod: "Hansol Chlorhexidine Gluconate 4% Topical Solution + Bactromed Mupirocin Ointment (2% w/w). (If patient denies, leave open).", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0120", isDiabetic: false, isPostAmputation: false, amputationType: "", codDone: false, codImage: null },
-            { id: 21, name: "Garrido", ward: "IM WARD", dx: "Sacral Ulcers", surgery: "", monitor: "VSQ4", cod: "Wet-to-dry with Dakin's Solution OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0121", isDiabetic: false, isPostAmputation: false, amputationType: "", codDone: false, codImage: null },
-            { id: 22, name: "Ellaso, Eric (56/M)", ward: "IM WARD", dx: "Wound Care", surgery: "", monitor: "VSQ4", cod: "Wet-to-dry with Dakin's Solution OD. (Note: Put 1 wet gauze inside the wound).", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0122", isDiabetic: false, isPostAmputation: false, amputationType: "", codDone: false, codImage: null },
-            { id: 23, name: "Castillejos, Draven Mell (2/M)", ward: "PEDIATRIC WARD", dx: "Perianal Cellulitis/Abscess, T/C Sepsis, T/C ALL", surgery: "", monitor: "VSQ4", cod: "Apply Flammazine and wound care BID", location: "In Ward", watcherName: "Parent / Guardian", watcherPhone: "0917-550-0123", isDiabetic: false, isPostAmputation: false, amputationType: "", codDone: false, codImage: null }
+            { id: 1, name: "Pascual, Gervacio (9/M)", ward: "PEDIATRICS SX WARD", dx: "Acute Appendicitis", surgery: "Appendectomy", monitor: "VSQ4", cod: "To be done on 11/10/26", location: "Post-Op", watcherName: "Parent / Guardian", watcherPhone: "0917-550-0101", isDiabetic: false, isPostAmputation: false, amputationType: "", codDone: false, codImages: [] },
+            { id: 2, name: "De Guzman, Lolita (76/F)", ward: "FEMALE SURGERY WARD", dx: "Femoral Neck Fracture (L) sec to Fall", surgery: "", monitor: "VSQ4", cod: "", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0102", isDiabetic: false, isPostAmputation: false, amputationType: "", codDone: false, codImages: [] },
+            { id: 3, name: "Baco, Kristian (34/F)", ward: "FEMALE SURGERY WARD", dx: "Femoral Neck Fracture (L)", surgery: "", monitor: "VSQ4", cod: "", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0103", isDiabetic: false, isPostAmputation: false, amputationType: "", codDone: false, codImages: [] },
+            { id: 4, name: "Menju, Rebecca Ibasco (70/F)", ward: "FEMALE SURGERY WARD", dx: "Partial Gut Obstruction sec to Sigmoid Mass", surgery: "", monitor: "VSQ4", cod: "", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0104", isDiabetic: false, isPostAmputation: false, amputationType: "", codDone: false, codImages: [] },
+            { id: 5, name: "Cajeda, Maybeline (34/F)", ward: "FEMALE SURGERY WARD", dx: "Multiple Injuries sec to VA (Laceration (L) Leg; Femoral Fracture (L))", surgery: "", monitor: "VSQ4", cod: "Dry with Betadine", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0105", isDiabetic: false, isPostAmputation: false, amputationType: "", codDone: false, codImages: [] },
+            { id: 6, name: "Peralta, Reymark (28/M)", ward: "MALE SURGERY WARD", dx: "Multiple Injuries sec to VA (Femoral Shaft Fracture (L); Abrasion (L) Knee and Thigh)", surgery: "", monitor: "VSQ4", cod: "", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0106", isDiabetic: false, isPostAmputation: false, amputationType: "", codDone: false, codImages: [] },
+            { id: 7, name: "Fernando, Carlos Cañamo (63/M)", ward: "MALE SURGERY WARD", dx: "T/C Gastric Outlet Obstruction sec to G1 Mass", surgery: "", monitor: "VSQ4 | CBG: TID", cod: "Dry with Betadine. (Note: Be careful not to remove the tube during COD).", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0107", isDiabetic: false, isPostAmputation: false, amputationType: "", codDone: false, codImages: [] },
+            { id: 8, name: "Villanueva, Vidal Alberto (51/M)", ward: "MALE SURGERY WARD", dx: "T/C Open Fracture with Dislocation, Tibia-Fibula (R) sec to RCI", surgery: "", monitor: "VSQ4", cod: "Dry with Betadine. (Note: Do not remove cast).", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0108", isDiabetic: false, isPostAmputation: false, amputationType: "", codDone: false, codImages: [] },
+            { id: 9, name: "Julom, El Quinwell", ward: "MALE SURGERY WARD", dx: "Stab Wound Abdomen", surgery: "Exploratory Laparotomy", monitor: "VSQ4 | JP Drain | NGT | Urine Output", cod: "Dry with Betadine", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0109", isDiabetic: false, isPostAmputation: false, amputationType: "", codDone: false, codImages: [] },
+            { id: 10, name: "Montano, Luzviminda (57/F)", ward: "ENT / OPHTHA WARD", dx: "Sigmoid Adenocarcinoma Stage 3, Colovesical Fistula", surgery: "Colostomy", monitor: "VSQ4", cod: "Dressing done at 7:00 AM; JP drain and colostomy drain per shift", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0110", isDiabetic: false, isPostAmputation: false, amputationType: "", codDone: false, codImages: [] },
+            { id: 11, name: "Latumbo Jr., Zosimo (70/M)", ward: "ISOLATION SURGERY WARD", dx: "DM-2 Uncontrolled, Cellulitis with Wet Gangrene 3rd & 4th Digits (L) Foot", surgery: "BKA (Below-Knee Amputation)", monitor: "VSQ4 | CBG: TID", cod: "Clean closed surgical stump with Povidone-Iodine (Betadine), pat dry, and wrap with dry sterile gauze & elastic bandage OD.", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0111", isDiabetic: true, isPostAmputation: true, amputationType: "BKA", codDone: false, codImages: [] },
+            { id: 12, name: "Cabangbang, Ofelia (66/F)", ward: "ISOLATION SURGERY WARD", dx: "Diabetic Foot (R)", surgery: "", monitor: "VSQ4", cod: "Wet-to-dry with Dakin's Solution OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0112", isDiabetic: true, isPostAmputation: false, amputationType: "", codDone: false, codImages: [] },
+            { id: 13, name: "Eribal, Zandro Ferrer (54/M)", ward: "ISOLATION SURGERY WARD", dx: "Non-healing Wound (L) Thigh, T2 DM", surgery: "", monitor: "VSQ2 | CBG: Q1", cod: "Wet-to-dry (Ask NOD).", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0113", isDiabetic: true, isPostAmputation: false, amputationType: "", codDone: false, codImages: [] },
+            { id: 14, name: "Quitain, Rodel Badrina (52/M)", ward: "ISOLATION SURGERY WARD", dx: "Non-healing Wound (L) Heel (Note: presence of maggots)", surgery: "", monitor: "VSQ4", cod: "Wet-to-dry with Third's Solution OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0114", isDiabetic: false, isPostAmputation: false, amputationType: "", codDone: false, codImages: [] },
+            { id: 15, name: "Manlangit, Allan (44/M)", ward: "ISOLATION SURGERY WARD", dx: "Sepsis sec to Decubitus Ulcer Grade IV", surgery: "", monitor: "VSQ4", cod: "Wet-to-dry with Dakin's Solution", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0115", isDiabetic: false, isPostAmputation: false, amputationType: "", codDone: false, codImages: [] },
+            { id: 16, name: "Caballero, Daniel Seth", ward: "SURGICAL SUITE ROOM", dx: "Fracture, Middle 3rd Humerus (R)", surgery: "", monitor: "VSQ4", cod: "", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0116", isDiabetic: false, isPostAmputation: false, amputationType: "", codDone: false, codImages: [] },
+            { id: 17, name: "Buenviaje, Nilda Cajipo (69/F)", ward: "CICU", dx: "Diabetic Foot (R)", surgery: "", monitor: "VSQ1 | CBG: TID", cod: "Wet-to-dry with Dakin's Solution OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0117", isDiabetic: true, isPostAmputation: false, amputationType: "", codDone: false, codImages: [] },
+            { id: 18, name: "Lumandez, Pablito Jr.", ward: "CICU", dx: "Diabetic Foot / Wound", surgery: "", monitor: "VSQ4", cod: "Wet-to-dry with Dakin's Solution OD. (Note: Should be done during daytime).", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0118", isDiabetic: true, isPostAmputation: false, amputationType: "", codDone: false, codImages: [] },
+            { id: 19, name: "Zuniga", ward: "IM WARD", dx: "Sepsis sec to Sacral Ulcers", surgery: "", monitor: "VSQ4", cod: "Wet-to-dry with Dakin's Solution OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0119", isDiabetic: false, isPostAmputation: false, amputationType: "", codDone: false, codImages: [] },
+            { id: 20, name: "Atanante, Jennifer", ward: "IM WARD", dx: "Cellulitis / Wound Care", surgery: "", monitor: "VSQ4", cod: "Hansol Chlorhexidine Gluconate 4% Topical Solution + Bactromed Mupirocin Ointment (2% w/w). (If patient denies, leave open).", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0120", isDiabetic: false, isPostAmputation: false, amputationType: "", codDone: false, codImages: [] },
+            { id: 21, name: "Garrido", ward: "IM WARD", dx: "Sacral Ulcers", surgery: "", monitor: "VSQ4", cod: "Wet-to-dry with Dakin's Solution OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0121", isDiabetic: false, isPostAmputation: false, amputationType: "", codDone: false, codImages: [] },
+            { id: 22, name: "Ellaso, Eric (56/M)", ward: "IM WARD", dx: "Wound Care", surgery: "", monitor: "VSQ4", cod: "Wet-to-dry with Dakin's Solution OD. (Note: Put 1 wet gauze inside the wound).", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0122", isDiabetic: false, isPostAmputation: false, amputationType: "", codDone: false, codImages: [] },
+            { id: 23, name: "Castillejos, Draven Mell (2/M)", ward: "PEDIATRIC WARD", dx: "Perianal Cellulitis/Abscess, T/C Sepsis, T/C ALL", surgery: "", monitor: "VSQ4", cod: "Apply Flammazine and wound care BID", location: "In Ward", watcherName: "Parent / Guardian", watcherPhone: "0917-550-0123", isDiabetic: false, isPostAmputation: false, amputationType: "", codDone: false, codImages: [] }
         ];
 
         const DOCTORS = [
@@ -82,7 +82,7 @@
             const [activeUser, setActiveUser] = useState(""); 
             const [loginTab, setLoginTab] = useState('clerk'); 
             
-            // Login Form States (Fixed variable mapping)
+            // Login Form States
             const [clerkNameInput, setClerkNameInput] = useState("");
             const [clerkIdInput, setClerkIdInput] = useState("");
             const [selectedDoctorName, setSelectedDoctorName] = useState(DOCTORS[0].name);
@@ -93,7 +93,11 @@
             const [notifications, setNotifications] = useState([]);
             const [isOnline, setIsOnline] = useState(false);
             const [showSops, setShowSops] = useState(false);
-            const [viewImage, setViewImage] = useState(null);
+            
+            // --- MODAL STATES ---
+            const [uploadModal, setUploadModal] = useState(null); // { patientId, images: [] }
+            const [viewImages, setViewImages] = useState(null); // Array of base64 strings
+            const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
             // 🔥 FIREBASE REAL-TIME SYNC 🔥
             useEffect(() => {
@@ -188,28 +192,54 @@
                 }
             };
 
-            const handleImageUpload = (id, file) => {
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const img = new Image();
-                    img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        const ctx = canvas.getContext('2d');
-                        const MAX_WIDTH = 800;
-                        const scaleSize = MAX_WIDTH / img.width;
-                        canvas.width = MAX_WIDTH;
-                        canvas.height = img.height * scaleSize;
-                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                        const base64Img = canvas.toDataURL('image/jpeg', 0.6); 
+            // --- MULTIPLE IMAGE UPLOAD LOGIC ---
+            const handleFileSelect = (e) => {
+                const files = Array.from(e.target.files);
+                if (!files.length) return;
+                
+                if (uploadModal.images.length + files.length > 6) {
+                    alert("You can only upload up to 6 images per patient.");
+                    return;
+                }
 
-                        const patientName = patients.find(p=>p.id===id)?.name || "a patient";
-                        addNotification(`📸 ${activeUser} uploaded COD proof and marked it DONE for ${patientName}.`);
-                        syncPatients(prev => prev.map(p => p.id === id ? { ...p, codImage: base64Img, codDone: true } : p));
+                files.forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            const ctx = canvas.getContext('2d');
+                            const MAX_WIDTH = 800; // Compress image
+                            const scaleSize = MAX_WIDTH / img.width;
+                            canvas.width = MAX_WIDTH;
+                            canvas.height = img.height * scaleSize;
+                            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                            const base64Img = canvas.toDataURL('image/jpeg', 0.6); 
+
+                            setUploadModal(prev => ({
+                                ...prev,
+                                images: [...prev.images, base64Img]
+                            }));
+                        };
+                        img.src = ev.target.result;
                     };
-                    img.src = e.target.result;
-                };
-                reader.readAsDataURL(file);
+                    reader.readAsDataURL(file);
+                });
+            };
+
+            const submitCodProof = () => {
+                if (uploadModal.images.length === 0) {
+                    return alert("Please add at least one image to complete COD.");
+                }
+                const patientName = patients.find(p => p.id === uploadModal.patientId)?.name || "a patient";
+                addNotification(`📸 ${activeUser} uploaded COD proof and marked it DONE for ${patientName}.`);
+                
+                syncPatients(prev => prev.map(p => 
+                    p.id === uploadModal.patientId 
+                    ? { ...p, codImages: uploadModal.images, codDone: true } 
+                    : p
+                ));
+                setUploadModal(null);
             };
 
             const toggleLocation = (id, newLoc) => {
@@ -438,18 +468,24 @@
 
                                                     <div className="pt-1">
                                                         {patient.codDone ? (
-                                                            <button onClick={() => setViewImage(patient.codImage)} className="w-full bg-emerald-50 text-emerald-700 border border-emerald-200 py-2.5 rounded-lg text-xs font-bold hover:bg-emerald-100 transition shadow-sm">
-                                                                ✅ COD Completed (Click to View Proof)
+                                                            <button onClick={() => {
+                                                                // Legacy support for older uploads + new array structure
+                                                                let imgs = patient.codImages && patient.codImages.length > 0 ? patient.codImages : [patient.codImage].filter(Boolean);
+                                                                if(imgs.length > 0) {
+                                                                    setViewImages(imgs); 
+                                                                    setCurrentImageIndex(0);
+                                                                }
+                                                            }} className="w-full bg-emerald-50 text-emerald-700 border border-emerald-200 py-2.5 rounded-lg text-xs font-bold hover:bg-emerald-100 transition shadow-sm flex items-center justify-center gap-1.5">
+                                                                ✅ COD Completed (View Proof)
                                                             </button>
                                                         ) : (
                                                             userRole === 'clerk' ? (
-                                                                <label className="cursor-pointer w-full bg-white text-blue-600 border border-blue-300 py-2.5 rounded-lg text-xs font-bold hover:bg-blue-50 transition shadow-sm flex items-center justify-center gap-1.5">
+                                                                <button onClick={() => setUploadModal({ patientId: patient.id, images: [] })} className="w-full bg-white text-blue-600 border border-blue-300 py-2.5 rounded-lg text-xs font-bold hover:bg-blue-50 transition shadow-sm flex items-center justify-center gap-1.5">
                                                                     📸 Upload Proof to Complete COD
-                                                                    <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => handleImageUpload(patient.id, e.target.files[0])} />
-                                                                </label>
+                                                                </button>
                                                             ) : (
-                                                                <div className="w-full bg-slate-100 text-slate-500 border border-slate-200 py-2.5 rounded-lg text-xs font-bold text-center">
-                                                                    ⏳ Waiting for Clerk to upload COD Proof
+                                                                <div className="w-full bg-slate-100 text-slate-500 border border-slate-200 py-2.5 rounded-lg text-xs font-bold text-center flex items-center justify-center gap-1.5">
+                                                                    ⏳ Waiting for Clerk to upload Proof
                                                                 </div>
                                                             )
                                                         )}
@@ -498,11 +534,65 @@
                         })}
                     </main>
 
-                    {viewImage && (
-                        <div className="fixed inset-0 bg-slate-900/95 z-[60] flex flex-col items-center justify-center p-4 backdrop-blur-sm">
-                            <div className="max-w-2xl w-full relative">
-                                <button onClick={() => setViewImage(null)} className="absolute -top-12 right-0 text-white font-bold text-sm bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-full transition border border-slate-700 shadow-lg">✕ Close Proof</button>
-                                <img src={viewImage} alt="COD Proof" className="w-full rounded-2xl shadow-2xl border-4 border-slate-200" />
+                    {/* MULTI-IMAGE UPLOAD MODAL */}
+                    {uploadModal && (
+                        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+                            <div className="bg-white border border-slate-200 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+                                <div className="flex justify-between items-center">
+                                    <h2 className="text-lg font-bold text-slate-900">📸 Upload COD Proof</h2>
+                                    <button onClick={() => setUploadModal(null)} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
+                                </div>
+                                
+                                <p className="text-xs text-slate-500 font-medium">Add up to 6 images to prove Wound Care completion.</p>
+                                
+                                <div className="grid grid-cols-3 gap-2">
+                                    {uploadModal.images.map((img, idx) => (
+                                        <div key={idx} className="relative group aspect-square">
+                                            <img src={img} className="w-full h-full object-cover rounded-lg border border-slate-200 shadow-sm" />
+                                            <button onClick={() => setUploadModal(prev => ({...prev, images: prev.images.filter((_, i) => i !== idx)}))} className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs shadow-md border-2 border-white font-bold">✕</button>
+                                        </div>
+                                    ))}
+                                    
+                                    {uploadModal.images.length < 6 && (
+                                        <label className="border-2 border-dashed border-slate-300 rounded-lg flex flex-col items-center justify-center text-slate-400 hover:text-blue-600 hover:border-blue-400 hover:bg-blue-50 transition cursor-pointer aspect-square bg-slate-50">
+                                            <span className="text-2xl font-bold">+</span>
+                                            <span className="text-[10px] font-bold mt-1">Add Photo</span>
+                                            <input type="file" multiple accept="image/*" className="hidden" onChange={handleFileSelect} />
+                                        </label>
+                                    )}
+                                </div>
+
+                                <div className="pt-4 flex gap-3">
+                                    <button onClick={() => setUploadModal(null)} className="flex-1 py-3 rounded-xl font-bold text-sm bg-slate-100 text-slate-600 hover:bg-slate-200 transition">Cancel</button>
+                                    <button onClick={submitCodProof} disabled={uploadModal.images.length === 0} className="flex-1 py-3 rounded-xl font-bold text-sm bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm">Submit Proof</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* FULL-SCREEN IMAGE GALLERY VIEWER */}
+                    {viewImages && viewImages.length > 0 && (
+                        <div className="fixed inset-0 bg-slate-900/95 z-[70] flex flex-col items-center justify-center p-4 backdrop-blur-sm" onClick={(e) => { if(e.target === e.currentTarget) setViewImages(null); }}>
+                            
+                            {/* Permanently Fixed Close Button */}
+                            <button onClick={() => setViewImages(null)} className="fixed top-6 right-6 text-white font-bold text-sm bg-slate-800 hover:bg-slate-700 px-5 py-2.5 rounded-full transition border border-slate-700 shadow-xl z-50">✕ Close Proof</button>
+                            
+                            <div className="max-w-4xl w-full flex flex-col items-center gap-6 mt-12">
+                                {/* Constrained Image prevents pushing elements off-screen */}
+                                <img src={viewImages[currentImageIndex]} alt={`Proof ${currentImageIndex+1}`} className="max-h-[70vh] w-auto rounded-xl shadow-2xl border-4 border-slate-200 object-contain" />
+                                
+                                {/* Gallery Controls */}
+                                {viewImages.length > 1 && (
+                                    <div className="flex items-center gap-6 bg-slate-800/80 px-6 py-3 rounded-full border border-slate-700">
+                                        <button onClick={() => setCurrentImageIndex(i => Math.max(0, i - 1))} disabled={currentImageIndex === 0} className="bg-white/20 p-2 rounded-full text-white disabled:opacity-20 hover:bg-white/30 transition">
+                                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M15 19l-7-7 7-7"/></svg>
+                                        </button>
+                                        <span className="text-white font-bold tracking-widest text-sm">{currentImageIndex + 1} / {viewImages.length}</span>
+                                        <button onClick={() => setCurrentImageIndex(i => Math.min(viewImages.length - 1, i + 1))} disabled={currentImageIndex === viewImages.length - 1} className="bg-white/20 p-2 rounded-full text-white disabled:opacity-20 hover:bg-white/30 transition">
+                                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7"/></svg>
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}
