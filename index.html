@@ -66,7 +66,7 @@
             { id: 8, name: "Villanueva, Vidal Alberto (51/M)", ward: "MALE SURGERY WARD", room: "", dx: "T/C Open Fracture with Dislocation, Tibia-Fibula (R) sec to RCI", surgery: "", monitor: "VSQ4", cod: "Dry with Betadine. (Note: Do not remove cast).", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0108", isDiabetic: false, isPostAmputation: false, amputationType: "", codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
             { id: 9, name: "Julom, El Quinwell", ward: "MALE SURGERY WARD", room: "", dx: "Stab Wound Abdomen", surgery: "Exploratory Laparotomy", monitor: "VSQ4 | JP Drain | NGT | Urine Output", cod: "Dry with Betadine", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0109", isDiabetic: false, isPostAmputation: false, amputationType: "", codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
             { id: 10, name: "Montano, Luzviminda (57/F)", ward: "ENT / OPHTHA WARD", room: "", dx: "Sigmoid Adenocarcinoma Stage 3, Colovesical Fistula", surgery: "Colostomy", monitor: "VSQ4", cod: "Dressing done at 7:00 AM; JP drain and colostomy drain per shift", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0110", isDiabetic: false, isPostAmputation: false, amputationType: "", codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
-            { id: 11, name: "Latumbo Jr., Zosimo (70/M)", ward: "ISOLATION SURGERY WARD", room: "", dx: "DM-2 Uncontrolled, Cellulitis with Wet Gangrene 3rd & 4th Digits (L) Foot", surgery: "BKA (Below-Knee Amputation)", monitor: "VSQ4 | CBG: TID", cod: "Clean closed surgical stump with Povidone-Iodine (Betadine), pat dry, and wrap with dry sterile gauze & elastic bandage OD.", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0111", isDiabetic: true, isPostAmputation: true, amputationType: "BKA", codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
+            { id: 11, name: "Latumbo Jr., Zosimo (70/M)", ward: "ISOLATION SURGERY WARD", room: "", dx: "DM-2 Uncontrolled, Cellulitis with Wet Gangrene 3rd & 4th Digits (L) Foot", surgery: "BKA (Below-Knee Amputation)", monitor: "VSQ4 | CBG: TID", cod: "Clean closed surgical stump with Povidone-Iodine (Betadine), pat dry, and wrap with dry sterile gauze & elastic bandage OD.", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0111", isDiabetic: false, isPostAmputation: true, amputationType: "BKA", codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
             { id: 12, name: "Cabangbang, Ofelia (66/F)", ward: "ISOLATION SURGERY WARD", room: "", dx: "Diabetic Foot (R)", surgery: "", monitor: "VSQ4", cod: "Wet-to-dry with Dakin's Solution OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0112", isDiabetic: true, isPostAmputation: false, amputationType: "", codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
             { id: 13, name: "Eribal, Zandro Ferrer (54/M)", ward: "ISOLATION SURGERY WARD", room: "", dx: "Non-healing Wound (L) Thigh, T2 DM", surgery: "", monitor: "VSQ2 | CBG: Q1", cod: "Wet-to-dry (Ask NOD).", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0113", isDiabetic: true, isPostAmputation: false, amputationType: "", codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
             { id: 14, name: "Quitain, Rodel Badrina (52/M)", ward: "ISOLATION SURGERY WARD", room: "", dx: "Non-healing Wound (L) Heel (Note: presence of maggots)", surgery: "", monitor: "VSQ4", cod: "Wet-to-dry with Third's Solution OD", location: "In Ward", watcherName: "Family Watcher", watcherPhone: "0917-550-0114", isDiabetic: false, isPostAmputation: false, amputationType: "", codDone: false, codImages: [], physicianOrders: [], vitalsHistory: [], isDischarged: false, dischargeTimestamp: null },
@@ -243,7 +243,6 @@
                 }
             };
 
-            // EDIT WATCHER NAME & PHONE
             const editWatcher = (id) => {
                 const p = patients.find(pat => pat.id === id);
                 if (!p) return;
@@ -256,7 +255,7 @@
                 syncPatients(prev => prev.map(pat => pat.id === id ? { ...pat, watcherName: newName, watcherPhone: newPhone } : pat));
             };
 
-            // DOCTOR BETADINE TOGGLE
+            // UNIVERSAL BETADINE TOGGLE FOR ALL PATIENTS
             const toggleBetadineAllowance = (id) => {
                 const p = patients.find(pat => pat.id === id);
                 if (!p) return;
@@ -267,7 +266,6 @@
                 syncPatients(prev => prev.map(pat => pat.id === id ? { ...pat, isPostAmputation: newStatus, cod: newCod } : pat));
             };
 
-            // ADD NEW PATIENT FORM HANDLER
             const handleAddPatientSubmit = (e) => {
                 e.preventDefault();
                 const form = e.target;
@@ -282,7 +280,7 @@
                     cod: form.patientCod.value || '',
                     location: 'In Ward',
                     watcherName: form.watcherName.value || 'Family Watcher',
-                    watcherPhone: form.watcherPhone.value || '0917-000-0000',
+                    watcherPhone: form.watcherPhone.value || '0917-550-0000',
                     isDiabetic: form.isDiabetic.checked,
                     isPostAmputation: form.isPostAmputation.checked,
                     amputationType: form.isPostAmputation.checked ? 'Surgical' : '',
@@ -570,7 +568,6 @@
                             </div>
 
                             <div className="flex flex-wrap items-center gap-2">
-                                {/* UNIVERSAL ADD PATIENT BUTTON */}
                                 <button onClick={() => setAddPatientModal(true)} className="bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-2 rounded-lg text-xs font-bold shadow-sm transition flex items-center gap-1.5">
                                     ➕ Add Patient
                                 </button>
@@ -683,6 +680,7 @@
                                                     )}
                                                 </div>
 
+                                                {/* UNIVERSAL BETADINE STATUS & DOCTOR TOGGLE SWITCH */}
                                                 <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
                                                     {patient.isPostAmputation ? (
                                                         <span className="bg-emerald-50 text-emerald-700 border border-emerald-300 px-2.5 py-1 rounded-lg font-bold flex items-center gap-1">
@@ -692,11 +690,14 @@
                                                         <span className="bg-red-50 text-red-700 border border-red-300 px-2.5 py-1 rounded-lg font-bold">
                                                             🚨 NO BETADINE (DM Protocol)
                                                         </span>
-                                                    ) : null}
+                                                    ) : (
+                                                        <span className="bg-slate-100 text-slate-600 border border-slate-300 px-2.5 py-1 rounded-lg font-bold">
+                                                            standard protocol
+                                                        </span>
+                                                    )}
 
-                                                    {/* DOCTOR BETADINE TOGGLE BUTTON */}
                                                     {userRole === 'doctor' && (
-                                                        <button onClick={() => toggleBetadineAllowance(patient.id)} className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-1 rounded font-bold border border-slate-300 text-[11px] transition">
+                                                        <button onClick={() => toggleBetadineAllowance(patient.id)} className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1 rounded font-bold border border-slate-300 text-[11px] transition shadow-sm">
                                                             {patient.isPostAmputation ? '🔒 Turn Off Betadine' : '🔓 Toggle Betadine ON'}
                                                         </button>
                                                     )}
@@ -834,7 +835,6 @@
                                                     </button>
                                                 </div>
 
-                                                {/* WATCHER INFO WITH EDIT BUTTON */}
                                                 <div className="flex items-center justify-between bg-slate-50 px-3 py-2 rounded-xl border border-slate-200 text-xs mt-2">
                                                     <span className="text-slate-600 font-medium">👤 {patient.watcherName}</span>
                                                     <div className="flex items-center gap-2">
@@ -855,7 +855,7 @@
                         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[95] flex items-center justify-center p-4">
                             <div className="bg-white border border-slate-200 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
                                 <div className="flex justify-between items-center">
-                                    <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">➕ Adimit New Patient</h2>
+                                    <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">➕ Admit New Patient</h2>
                                     <button onClick={() => setAddPatientModal(false)} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
                                 </div>
                                 <form onSubmit={handleAddPatientSubmit} className="space-y-4 text-xs">
@@ -866,7 +866,7 @@
                                     <div className="grid grid-cols-2 gap-3">
                                         <div>
                                             <label className="font-bold text-slate-700 mb-1 block">Assign Ward</label>
-                                            <select name="patientWard" id="wardSelect" onChange={(e) => {
+                                            <select name="patientWard" onChange={(e) => {
                                                 const roomBox = document.getElementById('roomBox');
                                                 if (e.target.value === 'MAIN ISOLATION WARD') {
                                                     roomBox.style.display = 'block';
