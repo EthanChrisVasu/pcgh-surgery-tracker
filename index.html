@@ -42,10 +42,9 @@
 
         const { useState, useEffect } = React;
 
-        const CURRENT_VERSION = "v2.8.0";
+        const CURRENT_VERSION = "v2.9.0";
         const VERSION_LOG_NOTES = [
-            { category: "Wound Care UI", text: "Added dedicated edit pencil box for Special Wound Care Instructions, matching the exact style of the Monitor box." },
-            { category: "UI Cleanup", text: "Removed color labels from protocol dropdowns and activity logs." },
+            { category: "Wound Care UI", text: "Completely separated Special Wound Care Instructions into its own dedicated editable box with an edit pencil, removing custom text clutter from protocol dropdowns." },
             { category: "Patient Management", text: "Added Main Isolation Ward (Rooms 401–430) and universal Add Patient intake form." },
             { category: "Discharge Workflow", text: "MGH Discharge status includes a 24-hour auto-archive timer with warning prompts and undo support." }
         ];
@@ -273,23 +272,29 @@
                 syncPatients(prev => prev.map(pat => pat.id === id ? { ...pat, watcherName: newName.toUpperCase(), watcherPhone: newPhone } : pat));
             };
 
-            const updateWoundCareProtocol = (id, protocolType, timingAbbr, customText = "") => {
+            const updateWoundCareProtocol = (id, protocolType, timingAbbr) => {
                 const p = patients.find(pat => pat.id === id);
                 if (!p) return;
 
-                let finalCod = "";
-                if (protocolType === 'CUSTOM') {
-                    finalCod = customText.toUpperCase();
-                } else {
-                    let baseText = "";
-                    if (protocolType === 'BETADINE') baseText = "DRY WITH BETADINE";
-                    else if (protocolType === 'DAKINS') baseText = "WET-TO-DRY WITH DAKIN'S SOLUTION";
-                    else if (protocolType === 'THIRDS') baseText = "WET-TO-DRY WITH THIRD'S SOLUTION";
-                    finalCod = `${baseText} ${timingAbbr}`;
-                }
+                let baseText = "";
+                if (protocolType === 'BETADINE') baseText = "DRY WITH BETADINE";
+                else if (protocolType === 'DAKINS') baseText = "WET-TO-DRY WITH DAKIN'S SOLUTION";
+                else if (protocolType === 'THIRDS') baseText = "WET-TO-DRY WITH THIRD'S SOLUTION";
+
+                const finalCod = `${baseText} ${timingAbbr}`;
 
                 addNotification(`⚕️ ${activeUser} updated Special Wound Care Instructions to [${finalCod}] for ${p.name}.`, id);
                 syncPatients(prev => prev.map(pat => pat.id === id ? { ...pat, cod: finalCod, codTiming: timingAbbr } : pat));
+            };
+
+            // Custom Free-Text Wound Care Updater via Separate Edit Box
+            const updateCustomWoundCare = (id, newText) => {
+                const p = patients.find(pat => pat.id === id);
+                if (!p) return;
+                const upperText = newText.toUpperCase();
+
+                addNotification(`⚕️ ${activeUser} updated Special Wound Care Instructions for ${p.name}.`, id);
+                syncPatients(prev => prev.map(pat => pat.id === id ? { ...pat, cod: upperText } : pat));
             };
 
             const toggleBetadineAllowance = (id) => {
@@ -754,7 +759,7 @@
                                                     )}
                                                 </div>
 
-                                                {/* SPECIAL WOUND CARE INSTRUCTIONS BOX (WITH EDITABLE BOX LIKE MONITOR) */}
+                                                {/* SPECIAL WOUND CARE INSTRUCTIONS BOX (WITH SEPARATE EDITABLE BOX LIKE MONITOR) */}
                                                 <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100 space-y-3">
                                                     <div className="flex justify-between items-center text-xs">
                                                         <span className="font-bold text-slate-800 uppercase">SPECIAL WOUND CARE INSTRUCTIONS</span>
@@ -764,7 +769,7 @@
                                                         </span>
                                                     </div>
                                                     
-                                                    {/* CLEAN COLOR-CODED PROTOCOL BADGE DISPLAY (WITHOUT LITERAL TEXT TAGS) */}
+                                                    {/* COLOR-CODED PROTOCOL BADGE DISPLAY */}
                                                     <div className="flex items-center gap-2">
                                                         {patient.cod && patient.cod.includes("BETADINE") ? (
                                                             <span className="bg-amber-100 text-amber-900 border border-amber-300 px-3 py-1.5 rounded-lg font-bold uppercase text-xs flex items-center gap-2 shadow-sm">
@@ -781,27 +786,20 @@
                                                         )}
                                                     </div>
 
-                                                    {/* DOCTOR SELECTORS & EDITABLE BOX FOR SPECIAL WOUND CARE */}
+                                                    {/* DOCTOR CONTROLS: SEPARATE DROPDOWNS AND DEDICATED EDITABLE TEXT BOX */}
                                                     {userRole === 'doctor' && (
-                                                        <div className="space-y-2 pt-1 bg-white p-2.5 rounded-lg border border-slate-200">
+                                                        <div className="space-y-2 pt-1 bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
                                                             <div className="grid grid-cols-2 gap-2">
                                                                 <div>
                                                                     <label className="text-[10px] font-bold text-slate-500 block mb-1 uppercase">Protocol Type</label>
                                                                     <select 
-                                                                        value={patient.cod && patient.cod.includes("BETADINE") ? "BETADINE" : patient.cod && patient.cod.includes("THIRD'S") ? "THIRDS" : patient.cod && patient.cod.includes("DAKIN") ? "DAKINS" : "CUSTOM"}
-                                                                        onChange={(e) => {
-                                                                            if(e.target.value === 'CUSTOM') {
-                                                                                updateWoundCareProtocol(patient.id, 'CUSTOM', '', patient.cod || '');
-                                                                            } else {
-                                                                                updateWoundCareProtocol(patient.id, e.target.value, patient.codTiming || "OD");
-                                                                            }
-                                                                        }}
+                                                                        value={patient.cod && patient.cod.includes("BETADINE") ? "BETADINE" : patient.cod && patient.cod.includes("THIRD'S") ? "THIRDS" : "DAKINS"}
+                                                                        onChange={(e) => updateWoundCareProtocol(patient.id, e.target.value, patient.codTiming || "OD")}
                                                                         className="w-full bg-slate-50 border border-slate-300 rounded px-2 py-1 text-xs font-bold uppercase text-slate-800 focus:outline-none"
                                                                     >
                                                                         <option value="DAKINS">Dakin's Solution</option>
                                                                         <option value="BETADINE">Betadine OD</option>
                                                                         <option value="THIRDS">Third's Solution</option>
-                                                                        <option value="CUSTOM">Custom Free-Text</option>
                                                                     </select>
                                                                 </div>
                                                                 <div>
@@ -818,16 +816,19 @@
                                                                     </select>
                                                                 </div>
                                                             </div>
-                                                            {/* EDITABLE BOX FOR SPECIAL WOUND CARE INSTRUCTIONS */}
-                                                            <div className="flex items-center justify-between bg-slate-50 p-2 rounded-lg border border-slate-300">
-                                                                <input 
-                                                                    type="text"
-                                                                    value={patient.cod || ""}
-                                                                    onChange={(e) => updateWoundCareProtocol(patient.id, 'CUSTOM', '', e.target.value)}
-                                                                    placeholder="ENTER SPECIAL WOUND CARE..."
-                                                                    className="w-full bg-transparent text-xs font-bold uppercase text-slate-800 focus:outline-none"
-                                                                />
-                                                                <span className="text-blue-500 font-bold ml-2">✏️</span>
+                                                            {/* SEPARATE DEDICATED EDITABLE BOX WITH PENCIL ICON */}
+                                                            <div>
+                                                                <label className="text-[10px] font-bold text-slate-500 block mb-1 uppercase">Custom Edit Instruction</label>
+                                                                <div className="flex items-center justify-between bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-300">
+                                                                    <input 
+                                                                        type="text"
+                                                                        value={patient.cod || ""}
+                                                                        onChange={(e) => updateCustomWoundCare(patient.id, e.target.value)}
+                                                                        placeholder="ENTER WOUND CARE..."
+                                                                        className="w-full bg-transparent text-xs font-bold uppercase text-slate-800 focus:outline-none"
+                                                                    />
+                                                                    <span className="text-orange-500 font-bold ml-2 shrink-0">✏️</span>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     )}
