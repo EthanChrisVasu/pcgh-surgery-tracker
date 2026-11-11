@@ -40,13 +40,15 @@
             console.error("Firebase Connection Error:", error);
         }
 
-        const { useState, useEffect } = React;
+        const { useState, useEffect, useRef } = React;
 
-        const CURRENT_VERSION = "v3.3.0";
+        const CURRENT_VERSION = "v3.4.0";
         const VERSION_LOG_NOTES = [
-            { category: "Doctor Profile", text: "Removed 'Surgery Resident / Consultant' titles and added Verified Blue Checkmarks with newly added physicians (Dr. Lumaad, Dr. Penasales, Dr. De Borja, Dr. Ann Onbit)." },
-            { category: "Surgical Status", text: "Updated location buttons to support toggle between Pre-Op and Post-Op." },
-            { category: "Wound Care Toggle", text: "Added 'Wound Care Needed / Monitor Only' toggle switch on all patient cards." }
+            { category: "Live Doctor Presence", text: "Clerks and staff can now see in real-time which specific Doctors are currently online on the tracker." },
+            { category: "Live Admission Alert", text: "Whenever a new patient card is added, doctors currently online receive an automatic instant pop-up alert message." },
+            { category: "Vital Signs Upgrade", text: "Added SpO2 (%) oxygen saturation tracking to the Vital Signs logging modal, card preview, and history logs." },
+            { category: "Instant Removal", text: "Added an option to instantly delete/remove a patient card without waiting 24 hours." },
+            { category: "Doctor Profile & Status", text: "Verified Blue Checkmarks for doctors and Pre-Op / Post-Op location toggles." }
         ];
 
         const WARD_LIST = [
@@ -113,6 +115,13 @@
             "OD", "BID", "TID", "QID", "Q1H", "Q2H", "Q3H", "Q4H", "QHS", "QOD", "ATC", "AC", "PC"
         ];
 
+        // Reusable Verified Blue Checkmark SVG Badge
+        const VerifiedBlueTick = () => (
+            <svg className="w-4 h-4 text-blue-500 inline-block ml-1 shrink-0" viewBox="0 0 24 24" fill="currentColor" title="Verified Physician">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+            </svg>
+        );
+
         function App() {
             const [isAuthenticated, setIsAuthenticated] = useState(false);
             const [userRole, setUserRole] = useState(null); 
@@ -131,6 +140,12 @@
             const [notifications, setNotifications] = useState([]);
             const [isOnline, setIsOnline] = useState(false);
             
+            // Live Doctor Presence & Live Admission Alert States
+            const [onlineDoctors, setOnlineDoctors] = useState([]);
+            const [liveDoctorAlert, setLiveDoctorAlert] = useState(null);
+            const sessionStartTimeRef = useRef(Date.now());
+            const activePresenceRef = useRef(null);
+
             const [showSops, setShowSops] = useState(false);
             const [uploadModal, setUploadModal] = useState(null); 
             const [viewImages, setViewImages] = useState(null); 
@@ -152,6 +167,9 @@
 
                 const patientsRef = db.ref('pcgh/patients');
                 const notifsRef = db.ref('pcgh/notifications');
+                const onlineDocsRef = db.ref('pcgh/onlineDoctors');
+                const admissionAlertRef = db.ref('pcgh/latestAdmissionAlert');
+                const connectedRef = db.ref('.info/connected');
 
                 patientsRef.on('value', (snapshot) => {
                     if (snapshot.exists()) {
@@ -184,11 +202,57 @@
                     }
                 });
 
+                // Listen for all currently online doctors (visible to both Clerks & Doctors)
+                onlineDocsRef.on('value', (snapshot) => {
+                    if (snapshot.exists()) {
+                        const data = snapshot.val();
+                        const list = Object.values(data).filter(Boolean);
+                        setOnlineDoctors(list);
+                    } else {
+                        setOnlineDoctors([]);
+                    }
+                });
+
+                // Register Doctor online presence if logged in as a Doctor
+                if (userRole === 'doctor') {
+                    const docKey = activeUser.replace(/[.#$/[\]\s✔️]/g, '_');
+                    const myPresenceRef = db.ref(`pcgh/onlineDoctors/${docKey}`);
+                    activePresenceRef.current = myPresenceRef;
+
+                    connectedRef.on('value', (snap) => {
+                        if (snap.val() === true) {
+                            myPresenceRef.onDisconnect().remove();
+                            myPresenceRef.set({
+                                name: activeUser.replace(' ✔️', ''),
+                                loginTime: new Date().toLocaleTimeString(),
+                                timestamp: Date.now()
+                            });
+                        }
+                    });
+                }
+
+                // Listen for new patient admissions to automatically message live doctors
+                admissionAlertRef.on('value', (snapshot) => {
+                    if (snapshot.exists() && userRole === 'doctor') {
+                        const alertData = snapshot.val();
+                        if (alertData && alertData.timestamp > sessionStartTimeRef.current) {
+                            setLiveDoctorAlert(alertData);
+                        }
+                    }
+                });
+
                 return () => {
                     patientsRef.off();
                     notifsRef.off();
+                    onlineDocsRef.off();
+                    admissionAlertRef.off();
+                    connectedRef.off();
+                    if (activePresenceRef.current) {
+                        activePresenceRef.current.remove();
+                        activePresenceRef.current = null;
+                    }
                 };
-            }, [isAuthenticated]);
+            }, [isAuthenticated, userRole, activeUser]);
 
             const syncPatients = (updaterFn) => {
                 setPatients(prev => {
@@ -211,6 +275,7 @@
                 e.preventDefault();
                 if (clerkNameInput.trim() === "") return alert("Please enter your name.");
                 const formattedName = `${clerkNameInput}${clerkIdInput ? ` (${clerkIdInput})` : ''} - ${clerkShift} Shift`;
+                sessionStartTimeRef.current = Date.now();
                 setActiveUser(formattedName);
                 setUserRole("clerk");
                 setIsAuthenticated(true);
@@ -222,7 +287,8 @@
                 const doc = DOCTORS.find(d => d.name === selectedDoctorName);
                 if (doc && doc.pin === doctorPinInput) {
                     const cleanDocName = doc.name.replace(/^Dr\.\s*/, '');
-                    setActiveUser(`Dr. ${cleanDocName} ✔️`);
+                    sessionStartTimeRef.current = Date.now();
+                    setActiveUser(`Dr. ${cleanDocName}`);
                     setUserRole("doctor");
                     setIsAuthenticated(true);
                     setDoctorPinInput("");
@@ -233,6 +299,10 @@
             };
 
             const handleLogout = () => {
+                if (activePresenceRef.current) {
+                    activePresenceRef.current.remove();
+                    activePresenceRef.current = null;
+                }
                 setIsAuthenticated(false);
                 setUserRole(null);
                 setActiveUser("");
@@ -249,6 +319,7 @@
             const jumpToPatient = (patientId) => {
                 if (!patientId) return;
                 setShowActivityLog(false);
+                setLiveDoctorAlert(null);
                 setHighlightedPatient(patientId);
                 setTimeout(() => setHighlightedPatient(null), 4000);
                 const el = document.getElementById('patient-' + patientId);
@@ -360,8 +431,30 @@
                     dischargeTimestamp: null
                 };
 
-                addNotification(`➕ ${activeUser} admitted new patient: ${newPatient.name} to ${newPatient.ward}.`, newPatient.id);
+                const onlineDocNames = onlineDoctors.map(d => d.name).join(', ');
+                const docNotifSuffix = onlineDoctors.length > 0 
+                    ? ` (Auto-messaged live doctor${onlineDoctors.length > 1 ? 's' : ''}: ${onlineDocNames})` 
+                    : '';
+
+                addNotification(`➕ ${activeUser} admitted new patient: ${newPatient.name} to ${newPatient.ward}${docNotifSuffix}.`, newPatient.id);
                 syncPatients(prev => [newPatient, ...prev]);
+
+                // Broadcast instant live alert message to any doctor currently online on the sheet
+                if (db) {
+                    db.ref('pcgh/latestAdmissionAlert').set({
+                        id: Date.now(),
+                        timestamp: Date.now(),
+                        timeStr: new Date().toLocaleTimeString(),
+                        admittedBy: activeUser,
+                        patientId: newPatient.id,
+                        patientName: newPatient.name,
+                        ward: newPatient.ward,
+                        dx: newPatient.dx,
+                        monitor: newPatient.monitor,
+                        cod: newPatient.cod
+                    });
+                }
+
                 setAddPatientModal(false);
             };
 
@@ -447,11 +540,12 @@
                     bp: form.bp.value || 'N/A',
                     hr: form.hr.value || 'N/A',
                     rr: form.rr.value || 'N/A',
-                    temp: form.temp.value || 'N/A'
+                    temp: form.temp.value || 'N/A',
+                    spo2: form.spo2.value || 'N/A'
                 };
 
                 const patientName = patients.find(p => p.id === patientId)?.name;
-                addNotification(`📊 ${activeUser} logged Vitals for ${patientName} [${currentDateStr} - ${shiftName}].`, patientId);
+                addNotification(`📊 ${activeUser} logged Vitals (incl. SpO2) for ${patientName} [${currentDateStr} - ${shiftName}].`, patientId);
 
                 syncPatients(prev => prev.map(p => {
                     if (p.id === patientId) {
@@ -501,13 +595,24 @@
                 const newStatus = !targetPatient.isDischarged;
 
                 if (newStatus) {
-                    const confirmDischarge = window.confirm(`⚠️ Warning: Marking ${targetPatient.name} as Discharged (MGH) will automatically archive and remove this patient card from the active ward view after 24 hours. Do you wish to proceed?`);
+                    const confirmDischarge = window.confirm(`⚠️ Mark ${targetPatient.name} as Discharged (MGH)?\n\nNote: This card will automatically archive after 24 hours, or you can click "Remove Card Instantly" to delete it right now.`);
                     if (!confirmDischarge) return;
                 }
 
                 const timestamp = newStatus ? Date.now() : null;
                 addNotification(`🏥 ${activeUser} marked ${targetPatient.name} as ${newStatus ? 'DISCHARGED (MGH)' : 'READMITTED'}.`, id);
                 syncPatients(prev => prev.map(p => p.id === id ? { ...p, isDischarged: newStatus, dischargeTimestamp: timestamp } : p));
+            };
+
+            // Instant Patient Removal Function (No 24-hour wait required)
+            const removePatientInstantly = (id) => {
+                const targetPatient = patients.find(p => p.id === id);
+                if (!targetPatient) return;
+
+                if (window.confirm(`🗑️ INSTANT REMOVAL: Are you sure you want to permanently remove ${targetPatient.name} from the ward tracker right now?`)) {
+                    addNotification(`🗑️ ${activeUser} permanently removed ${targetPatient.name} from ${targetPatient.ward}.`);
+                    syncPatients(prev => prev.filter(p => p.id !== id));
+                }
             };
 
             const handleFileSelect = (e) => {
@@ -612,7 +717,7 @@
                                         <div>
                                             <label className="text-xs font-bold text-slate-700 mb-1.5 block">Select Attending / Resident</label>
                                             <select value={selectedDoctorName} onChange={(e) => setSelectedDoctorName(e.target.value)} className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-900 font-medium focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
-                                                {DOCTORS.map(d => <option key={d.name} value={d.name}>{d.name}</option>)}
+                                                {DOCTORS.map(d => <option key={d.name} value={d.name}>{d.name} ☑️</option>)}
                                             </select>
                                         </div>
                                         <div>
@@ -636,47 +741,107 @@
             return (
                 <div className="min-h-screen bg-slate-50 text-slate-900 pb-16">
                     <header className="bg-white border-b border-slate-200 sticky top-0 z-50 px-4 py-3 shadow-sm">
-                        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-                            <div className="flex items-center gap-3">
-                                <div className="bg-emerald-600 p-2.5 rounded-xl shadow-sm">
-                                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-                                </div>
-                                <div>
-                                    <div className="flex items-center gap-2">
-                                        <h1 className="text-lg font-bold tracking-tight text-slate-900">PCGH Surgery Ward</h1>
-                                        <span className={`text-xs px-2.5 py-1 rounded-full font-bold shadow-sm border ${userRole === 'doctor' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
-                                            {userRole === 'doctor' ? `👨‍⚕️ ${activeUser}` : `📋 ${activeUser}`}
-                                        </span>
+                        <div className="max-w-7xl mx-auto flex flex-col gap-3">
+                            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="bg-emerald-600 p-2.5 rounded-xl shadow-sm">
+                                        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
                                     </div>
-                                    <p className="text-xs text-slate-500 font-medium">
-                                        {isOnline ? <span className="text-emerald-600 flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Firebase Cloud Sync Active</span> : "Connecting to Cloud..."}
-                                    </p>
+                                    <div>
+                                        <div className="flex items-center gap-2">
+                                            <h1 className="text-lg font-bold tracking-tight text-slate-900">PCGH Surgery Ward</h1>
+                                            <span className={`text-xs px-2.5 py-1 rounded-full font-bold shadow-sm border flex items-center ${userRole === 'doctor' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
+                                                {userRole === 'doctor' ? (
+                                                    <>👨‍⚕️ {activeUser} <VerifiedBlueTick /></>
+                                                ) : (
+                                                    <>📋 {activeUser}</>
+                                                )}
+                                            </span>
+                                        </div>
+                                        <p className="text-xs text-slate-500 font-medium">
+                                            {isOnline ? <span className="text-emerald-600 flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Firebase Cloud Sync Active</span> : "Connecting to Cloud..."}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <button onClick={() => setAddPatientModal(true)} className="bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-2 rounded-lg text-xs font-bold shadow-sm transition flex items-center gap-1.5">
+                                        ➕ Add Patient
+                                    </button>
+                                    {userRole === 'doctor' && (
+                                        <button onClick={handleDailyReset} className="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-3.5 py-2 rounded-lg text-xs font-bold transition">
+                                            🌅 Reset Ward (New Day)
+                                        </button>
+                                    )}
+                                    <button onClick={() => setShowSops(!showSops)} className="bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 px-3.5 py-2 rounded-lg text-xs font-bold transition">
+                                        📋 SOPs & Rules
+                                    </button>
+                                    <button onClick={handleLogout} className="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 px-3.5 py-2 rounded-lg text-xs font-bold transition">
+                                        Sign Out
+                                    </button>
                                 </div>
                             </div>
 
-                            <div className="flex flex-wrap items-center gap-2">
-                                <button onClick={() => setAddPatientModal(true)} className="bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-2 rounded-lg text-xs font-bold shadow-sm transition flex items-center gap-1.5">
-                                    ➕ Add Patient
-                                </button>
-                                {userRole === 'doctor' && (
-                                    <button onClick={handleDailyReset} className="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-3.5 py-2 rounded-lg text-xs font-bold transition">
-                                        🌅 Reset Ward (New Day)
-                                    </button>
+                            {/* LIVE DOCTOR ONLINE STATUS BAR (VISIBLE ON CLERK & DOCTOR SIDE) */}
+                            <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center gap-2">
+                                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                                    <span className={`w-2 h-2 rounded-full ${onlineDoctors.length > 0 ? 'bg-emerald-500 animate-ping' : 'bg-slate-300'}`}></span>
+                                    Doctors Online Now:
+                                </span>
+                                {onlineDoctors.length > 0 ? (
+                                    <div className="flex flex-wrap items-center gap-1.5">
+                                        {onlineDoctors.map((doc, idx) => (
+                                            <span key={idx} className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-800 border border-emerald-300 px-2.5 py-0.5 rounded-full text-xs font-bold shadow-sm">
+                                                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                                {doc.name}
+                                                <VerifiedBlueTick />
+                                            </span>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <span className="text-xs text-slate-400 italic font-medium">No doctors currently active on the sheet</span>
                                 )}
-                                <button onClick={() => setShowSops(!showSops)} className="bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 px-3.5 py-2 rounded-lg text-xs font-bold transition">
-                                    📋 SOPs & Rules
-                                </button>
-                                <button onClick={handleLogout} className="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 px-3.5 py-2 rounded-lg text-xs font-bold transition">
-                                    Sign Out
-                                </button>
                             </div>
                         </div>
                     </header>
 
+                    {/* AUTOMATIC LIVE POP-UP MESSAGE FOR ONLINE DOCTORS WHEN A NEW PATIENT IS ADDED */}
+                    {liveDoctorAlert && userRole === 'doctor' && (
+                        <div className="fixed inset-0 bg-slate-900/75 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
+                            <div className="bg-white border-2 border-emerald-500 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-bounce-once">
+                                <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                                    <div className="flex items-center gap-2">
+                                        <span className="bg-emerald-500 text-white p-2 rounded-xl text-base">🚨</span>
+                                        <div>
+                                            <h3 className="text-base font-black text-slate-900 uppercase">New Patient Admitted Live</h3>
+                                            <p className="text-[11px] text-emerald-700 font-bold">{liveDoctorAlert.timeStr} • Added by {liveDoctorAlert.admittedBy}</p>
+                                        </div>
+                                    </div>
+                                    <button onClick={() => setLiveDoctorAlert(null)} className="text-slate-400 hover:text-slate-700 font-bold text-lg">✕</button>
+                                </div>
+                                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-1.5 text-xs uppercase">
+                                    <div className="text-sm font-black text-slate-900">{liveDoctorAlert.patientName}</div>
+                                    <div><strong className="text-slate-500">Assigned Ward:</strong> <span className="font-bold text-blue-700">{liveDoctorAlert.ward}</span></div>
+                                    <div><strong className="text-slate-500">Diagnosis (DX):</strong> {liveDoctorAlert.dx}</div>
+                                    <div><strong className="text-slate-500">Monitoring:</strong> {liveDoctorAlert.monitor}</div>
+                                    <div><strong className="text-slate-500">Wound Care:</strong> {liveDoctorAlert.cod}</div>
+                                </div>
+                                <div className="flex gap-2 pt-1">
+                                    <button onClick={() => setLiveDoctorAlert(null)} className="flex-1 py-3 rounded-xl font-bold text-xs bg-slate-100 text-slate-600 hover:bg-slate-200 transition uppercase">
+                                        Dismiss
+                                    </button>
+                                    <button onClick={() => jumpToPatient(liveDoctorAlert.patientId)} className="flex-1 py-3 rounded-xl font-bold text-xs bg-emerald-600 text-white hover:bg-emerald-700 transition shadow-md uppercase">
+                                        View Patient Card ➔
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {/* VERSION LOG POP-UP MODAL UPON LOGIN */}
                     {showVersionModal && (
                         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-                            <div className="bg-white border border-slate-200 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-200">
+                            <div className="bg-white border border-slate-200 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5">
                                 <div className="flex justify-between items-center border-b border-slate-200 pb-3">
                                     <div className="flex items-center gap-2">
                                         <span className="bg-emerald-100 text-emerald-800 text-xs font-black px-2.5 py-1 rounded-full uppercase tracking-wider">{CURRENT_VERSION}</span>
@@ -722,7 +887,7 @@
                                     <div className="bg-amber-50/50 p-4 rounded-xl border border-amber-100 space-y-2">
                                         <h3 className="font-bold text-slate-800">🚨 Diabetic Foot & Gangrene Protocols</h3>
                                         <p><strong className="text-red-600">NO BETADINE:</strong> Strictly avoid Povidone-Iodine for Diabetic Patients (unless post-amputation closed stump).</p>
-                                        <p><strong>Irrigation & Dressing:</strong> Dakin's Solution (1L PNSS + 10cc Hydrogen Peroxide) ➔ Microdacyn Gel Spray ➔ Wet-to-Dry dressing.</p>
+                                        <p><strong>Irrigation & Dressing:</strong> Dakin's Solution (1L PNSS - 30cc + 30cc Hydrogen Peroxide) or Third's Solution ➔ Microdacyn Gel Spray ➔ Wet-to-Dry dressing.</p>
                                     </div>
                                     <div className="bg-emerald-50/50 p-4 rounded-xl border border-emerald-100 space-y-2">
                                         <h3 className="font-bold text-slate-800">🔪 Post-Amputation Rule</h3>
@@ -755,13 +920,19 @@
                                                     id={`patient-${patient.id}`}
                                                     className={`bg-white border rounded-2xl p-5 shadow-sm space-y-4 transition-all duration-700 ${
                                                         highlightedPatient === patient.id ? 'ring-4 ring-blue-500 shadow-blue-500/50 scale-[1.02] border-blue-500 z-10 relative' : 
-                                                        patient.isDischarged ? 'opacity-70 bg-slate-100 grayscale-[0.2] border-slate-300' :
+                                                        patient.isDischarged ? 'opacity-80 bg-slate-100 border-slate-300' :
                                                         patient.isPostAmputation ? 'border-emerald-300 bg-emerald-50/30' : 'border-slate-200'
                                                     }`}
                                                 >
                                                     {patient.isDischarged && (
-                                                        <div className="bg-green-100 text-green-800 font-black text-center py-1.5 rounded-lg border border-green-300 shadow-sm text-sm tracking-widest uppercase mb-2">
-                                                            ✅ DISCHARGED (MGH)
+                                                        <div className="bg-green-100 text-green-800 font-black py-2 px-3 rounded-lg border border-green-300 shadow-sm text-xs tracking-wider uppercase mb-2 flex items-center justify-between">
+                                                            <span>✅ DISCHARGED (MGH)</span>
+                                                            <button 
+                                                                onClick={() => removePatientInstantly(patient.id)}
+                                                                className="bg-red-600 hover:bg-red-700 text-white text-[10px] font-bold px-2.5 py-1 rounded shadow-sm transition uppercase"
+                                                            >
+                                                                🗑️ Remove Now
+                                                            </button>
                                                         </div>
                                                     )}
 
@@ -937,7 +1108,7 @@
                                                         )}
                                                     </div>
 
-                                                    {/* SEPARATE VITALS & CBG LOG SECTIONS */}
+                                                    {/* SEPARATE VITALS (WITH SPO2) & CBG LOG SECTIONS */}
                                                     <div className="grid grid-cols-2 gap-2">
                                                         <div className="bg-slate-100/70 p-3 rounded-xl border border-slate-200 space-y-1.5">
                                                             <div className="flex justify-between items-center">
@@ -952,10 +1123,10 @@
                                                                 </div>
                                                             </div>
                                                             {patient.vitalsHistory && patient.vitalsHistory.length > 0 ? (
-                                                                <div className="bg-white p-2 rounded border text-[11px] font-bold uppercase">
-                                                                    <div>BP: {patient.vitalsHistory[0].bp}</div>
+                                                                <div className="bg-white p-2 rounded border text-[11px] font-bold uppercase space-y-0.5">
+                                                                    <div>BP: {patient.vitalsHistory[0].bp} | SpO2: {patient.vitalsHistory[0].spo2 || 'N/A'}%</div>
                                                                     <div>HR: {patient.vitalsHistory[0].hr} | T: {patient.vitalsHistory[0].temp}°C</div>
-                                                                    <div className="text-[9px] text-slate-400 font-normal pt-1">{patient.vitalsHistory[0].dateStr}</div>
+                                                                    <div className="text-[9px] text-slate-400 font-normal pt-0.5">{patient.vitalsHistory[0].dateStr}</div>
                                                                 </div>
                                                             ) : (
                                                                 <div className="text-[10px] text-slate-400 italic text-center py-1">No vitals</div>
@@ -1005,9 +1176,9 @@
                                                         </div>
                                                         
                                                         {patient.physicianOrders && patient.physicianOrders.length > 0 ? (
-                                                            <div className={`p-3 rounded-xl border text-xs shadow-sm uppercase ${DOCTOR_COLORS[patient.physicianOrders[0].doctorName] || 'bg-slate-50 border-slate-200 text-slate-800'}`}>
-                                                                <div className="flex justify-between font-bold mb-1 border-b border-black/10 pb-1">
-                                                                    <span>{patient.physicianOrders[0].doctorName}</span>
+                                                            <div className={`p-3 rounded-xl border text-xs shadow-sm uppercase ${DOCTOR_COLORS[patient.physicianOrders[0].doctorName.replace(' ✔️', '')] || 'bg-slate-50 border-slate-200 text-slate-800'}`}>
+                                                                <div className="flex justify-between font-bold mb-1 border-b border-black/10 pb-1 items-center">
+                                                                    <span className="flex items-center">{patient.physicianOrders[0].doctorName.replace(' ✔️', '')} <VerifiedBlueTick /></span>
                                                                     <span className="opacity-75">{patient.physicianOrders[0].date}</span>
                                                                 </div>
                                                                 {patient.physicianOrders[0].findings && <p className="mb-0.5"><strong className="opacity-75">Findings:</strong> {patient.physicianOrders[0].findings}</p>}
@@ -1036,12 +1207,21 @@
                                                                 </button>
                                                             ))}
                                                         </div>
-                                                        <button 
-                                                            onClick={() => toggleDischarge(patient.id)} 
-                                                            className={`w-full mt-1.5 py-2 rounded-lg text-xs font-bold uppercase transition shadow-sm border ${patient.isDischarged ? 'bg-amber-100 text-amber-700 border-amber-300 hover:bg-amber-200' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border-slate-300'}`}
-                                                        >
-                                                            {patient.isDischarged ? '↩️ UNDO DISCHARGE (RETURN TO WARD)' : '🏥 MARK AS DISCHARGED (MGH)'}
-                                                        </button>
+                                                        <div className="flex gap-2 mt-1.5">
+                                                            <button 
+                                                                onClick={() => toggleDischarge(patient.id)} 
+                                                                className={`flex-1 py-2 px-2 rounded-lg text-[11px] font-bold uppercase transition shadow-sm border ${patient.isDischarged ? 'bg-amber-100 text-amber-700 border-amber-300 hover:bg-amber-200' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border-slate-300'}`}
+                                                            >
+                                                                {patient.isDischarged ? '↩️ Undo MGH' : '🏥 Mark Discharged (MGH)'}
+                                                            </button>
+                                                            <button 
+                                                                onClick={() => removePatientInstantly(patient.id)} 
+                                                                className="py-2 px-3 rounded-lg text-[11px] font-bold uppercase transition shadow-sm border bg-red-50 text-red-600 hover:bg-red-100 border-red-200"
+                                                                title="Instantly delete this patient card without waiting 24 hours"
+                                                            >
+                                                                🗑️ Remove Card Instantly
+                                                            </button>
+                                                        </div>
                                                     </div>
 
                                                     <div className="flex items-center justify-between bg-slate-50 px-3 py-2 rounded-xl border border-slate-200 text-xs mt-2 uppercase">
@@ -1068,6 +1248,12 @@
                                     <h2 className="text-lg font-bold text-slate-900 uppercase flex items-center gap-2">➕ ADMIT NEW PATIENT</h2>
                                     <button onClick={() => setAddPatientModal(false)} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
                                 </div>
+                                {onlineDoctors.length > 0 && (
+                                    <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs text-emerald-800 font-semibold flex items-center gap-2">
+                                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping shrink-0"></span>
+                                        <span>Live Auto-Message Active: Submitting this card will immediately alert {onlineDoctors.map(d => d.name).join(', ')} on their screen.</span>
+                                    </div>
+                                )}
                                 <form onSubmit={handleAddPatientSubmit} className="space-y-4 text-xs uppercase">
                                     <div>
                                         <label className="font-bold text-slate-700 mb-1 block">Patient Name & Age/Gender</label>
@@ -1163,7 +1349,7 @@
                         </div>
                     )}
 
-                    {/* MODAL: LOG VITALS */}
+                    {/* MODAL: LOG VITALS (WITH SPO2 ADDED) */}
                     {vitalsModal && (
                         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[95] flex items-center justify-center p-4">
                             <div className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 uppercase">
@@ -1190,6 +1376,10 @@
                                         <div>
                                             <label className="text-xs font-bold text-slate-700 mb-1 block">Temp (°C)</label>
                                             <input name="temp" type="text" placeholder="36.5" className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-sm uppercase font-medium focus:outline-none focus:border-blue-500" />
+                                        </div>
+                                        <div className="col-span-2">
+                                            <label className="text-xs font-bold text-slate-700 mb-1 block">SpO2 (%)</label>
+                                            <input name="spo2" type="text" placeholder="98" className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-sm uppercase font-medium focus:outline-none focus:border-blue-500" />
                                         </div>
                                     </div>
                                     <div className="pt-2 flex gap-3">
@@ -1249,11 +1439,12 @@
                                                 <span className="text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">{v.dateStr} — {v.shift}</span>
                                                 <span className="text-slate-400">{v.timestamp}</span>
                                             </div>
-                                            <div className="grid grid-cols-2 gap-2 font-medium text-slate-700 pt-1">
+                                            <div className="grid grid-cols-3 gap-2 font-medium text-slate-700 pt-1">
                                                 <div>BP: <strong className="text-slate-900">{v.bp}</strong></div>
                                                 <div>HR: <strong className="text-slate-900">{v.hr} BPM</strong></div>
                                                 <div>RR: <strong className="text-slate-900">{v.rr} CPM</strong></div>
                                                 <div>Temp: <strong className="text-slate-900">{v.temp}°C</strong></div>
+                                                <div>SpO2: <strong className="text-blue-700">{v.spo2 || 'N/A'}%</strong></div>
                                             </div>
                                             <div className="text-[10px] text-slate-400 text-right pt-0.5 font-medium">
                                                 LOGGED BY: {v.loggedBy}
@@ -1310,12 +1501,12 @@
                                 </div>
                                 <div className="p-6 overflow-y-auto flex-1 space-y-4">
                                     {viewOrdersModal.physicianOrders && viewOrdersModal.physicianOrders.map(order => (
-                                        <div key={order.id} className={`p-4 rounded-2xl border text-xs shadow-sm space-y-2 ${DOCTOR_COLORS[order.doctorName] || 'bg-slate-50 border-slate-200 text-slate-800'}`}>
+                                        <div key={order.id} className={`p-4 rounded-2xl border text-xs shadow-sm space-y-2 ${DOCTOR_COLORS[order.doctorName.replace(' ✔️', '')] || 'bg-slate-50 border-slate-200 text-slate-800'}`}>
                                             <div className="flex justify-between font-bold border-b border-black/10 pb-1.5 items-center">
-                                                <span className="text-sm">{order.doctorName}</span>
+                                                <span className="text-sm flex items-center">{order.doctorName.replace(' ✔️', '')} <VerifiedBlueTick /></span>
                                                 <div className="flex items-center gap-3">
                                                     <span className="opacity-75">{order.date}</span>
-                                                    {userRole === 'doctor' && order.doctorName === activeUser && (
+                                                    {userRole === 'doctor' && order.doctorName.replace(' ✔️', '') === activeUser.replace(' ✔️', '') && (
                                                         <div className="flex gap-2">
                                                             {(!order.editCount || order.editCount < 5) && (
                                                                 <button onClick={() => { setOrderModal({ patientId: viewOrdersModal.id, findings: order.findings, orders: order.orders, editId: order.id }); setViewOrdersModal(null); }} className="bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1 rounded font-bold shadow-sm">EDIT</button>
