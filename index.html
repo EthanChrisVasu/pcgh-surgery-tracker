@@ -42,12 +42,11 @@
 
         const { useState, useEffect, useRef } = React;
 
-        const CURRENT_VERSION = "v3.7.0";
+        const CURRENT_VERSION = "v3.7.1";
         const VERSION_LOG_NOTES = [
-            { category: "Diagnostic Gallery", text: "Added a built-in X-ray and Lab Results Image Uploader/Gallery directly into the patient card." },
-            { category: "Vitals Frequency", text: "Logging vitals now strictly prompts the user to select the specific monitoring schedule (VSQ4, VSQ15, VSQ1, VSQ30) before proceeding." },
-            { category: "Strict 12-Hour Format", text: "All logged timestamps (Vitals, CBG, Output) have been forced into a standard 12-hour AM/PM format." },
-            { category: "Retained Features", text: "Doctor Color-Coding, AM/PM Shift Themes, Output Logging (Urine/JP), and Doctor-side full log histories are fully preserved." }
+            { category: "Click Bug Fixed", text: "Removed problematic overlapping styling layers that were blocking clicks on the Vitals, CBG, Output, and Order buttons." },
+            { category: "12-Hour Format strictly Enforced", text: "All Vitals, CBG, and Output logs strictly follow standard AM/PM time." },
+            { category: "Vitals Frequency Prompts Active", text: "The system now requires selecting a monitoring frequency before Vitals can be logged." }
         ];
 
         const WARD_LIST = [
@@ -141,7 +140,6 @@
         
         const VITALS_FREQ_OPTIONS = ["VSQ4", "VSQ15", "VSQ1", "VSQ30"];
 
-        // 12-Hour Format Helper Function
         const get12HourTime = () => {
             return new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true });
         };
@@ -179,9 +177,8 @@
 
             const [showSops, setShowSops] = useState(false);
             
-            // MODAL STATES
             const [uploadCodModal, setUploadCodModal] = useState(null); 
-            const [uploadLabModal, setUploadLabModal] = useState(null); // New Lab/Xray Uploader
+            const [uploadLabModal, setUploadLabModal] = useState(null);
             const [viewImages, setViewImages] = useState(null); 
             const [currentImageIndex, setCurrentImageIndex] = useState(0);
             
@@ -191,7 +188,7 @@
             const [orderModal, setOrderModal] = useState(null); 
             const [viewOrdersModal, setViewOrdersModal] = useState(null); 
             
-            const [vitalsFreqPrompt, setVitalsFreqPrompt] = useState(null); // Interceptor Prompt
+            const [vitalsFreqPrompt, setVitalsFreqPrompt] = useState(null); 
             const [vitalsModal, setVitalsModal] = useState(null); 
             
             const [cbgModal, setCbgModal] = useState(null);       
@@ -549,7 +546,7 @@
                     rr: form.rr.value || 'N/A', 
                     temp: form.temp.value || 'N/A', 
                     spo2: form.spo2.value || 'N/A',
-                    frequency: vitalsModal.frequency // Inject the intercepted frequency
+                    frequency: vitalsModal.frequency 
                 };
                 
                 addNotification(`📊 ${activeUser} logged Vitals for ${patients.find(p=>p.id===vitalsModal.id)?.name}.`, vitalsModal.id);
@@ -611,7 +608,6 @@
                 }
             };
 
-            // Shared File/Image Handler for both COD and Labs
             const handleImageSelect = (e, modalState, setModalStateFn) => {
                 const files = Array.from(e.target.files);
                 if (!files.length) return;
@@ -624,7 +620,7 @@
                         img.onload = () => {
                             const canvas = document.createElement('canvas');
                             const ctx = canvas.getContext('2d');
-                            const scaleSize = 1000 / img.width; // slightly larger scale for labs to preserve text clarity
+                            const scaleSize = 1000 / img.width; 
                             canvas.width = 1000; 
                             canvas.height = img.height * scaleSize;
                             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
@@ -780,22 +776,22 @@
                                     </div>
                                 </div>
 
-                                <div className="flex flex-wrap items-center gap-2 relative z-50">
-                                    <button onClick={() => setAddPatientModal(true)} className="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-2 rounded-lg text-xs font-bold shadow-sm transition flex items-center gap-1.5 relative z-50">
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <button onClick={() => setAddPatientModal(true)} className="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-2 rounded-lg text-xs font-bold shadow-sm transition flex items-center gap-1.5">
                                         ➕ Add Patient
                                     </button>
                                     {userRole === 'doctor' && (
-                                        <button onClick={handleDailyReset} className={`cursor-pointer px-3.5 py-2 rounded-lg text-xs font-bold transition border relative z-50 ${isDark ? 'bg-red-900/30 text-red-400 border-red-800/50 hover:bg-red-900/50' : 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100'}`}>
+                                        <button onClick={handleDailyReset} className={`cursor-pointer px-3.5 py-2 rounded-lg text-xs font-bold transition border ${isDark ? 'bg-red-900/30 text-red-400 border-red-800/50 hover:bg-red-900/50' : 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100'}`}>
                                             🌅 Reset Ward
                                         </button>
                                     )}
-                                    <button onClick={() => setShowSops(true)} className={`cursor-pointer px-3.5 py-2 rounded-lg text-xs font-bold transition border relative z-50 ${isDark ? 'bg-amber-900/30 text-amber-400 border-amber-800/50 hover:bg-amber-900/50' : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'}`}>
+                                    <button onClick={() => setShowSops(true)} className={`cursor-pointer px-3.5 py-2 rounded-lg text-xs font-bold transition border ${isDark ? 'bg-amber-900/30 text-amber-400 border-amber-800/50 hover:bg-amber-900/50' : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'}`}>
                                         📋 SOPs & Rules
                                     </button>
-                                    <button onClick={handleLogout} className={`cursor-pointer px-3.5 py-2 rounded-lg text-xs font-bold transition border relative z-50 ${isDark ? 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700' : 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200'}`}>
+                                    <button onClick={handleLogout} className={`cursor-pointer px-3.5 py-2 rounded-lg text-xs font-bold transition border ${isDark ? 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700' : 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200'}`}>
                                         Sign Out
                                     </button>
-                                    <button onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} className={`cursor-pointer px-3 py-2 rounded-lg text-lg transition border relative z-50 ${isDark ? 'bg-slate-800 border-slate-700 hover:bg-slate-700' : 'bg-slate-100 border-slate-300 hover:bg-slate-200'}`} title="Toggle Theme">
+                                    <button onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} className={`cursor-pointer px-3 py-2 rounded-lg text-lg transition border ${isDark ? 'bg-slate-800 border-slate-700 hover:bg-slate-700' : 'bg-slate-100 border-slate-300 hover:bg-slate-200'}`} title="Toggle Theme">
                                         {isDark ? '☀️' : '🌙'}
                                     </button>
                                 </div>
@@ -826,7 +822,7 @@
 
                     {/* INTERACTIVE NOTIFICATION BAR */}
                     {notifications.length > 0 && (
-                        <div onClick={() => setShowActivityLog(true)} className={`border-b px-4 py-2.5 shadow-sm cursor-pointer transition flex items-center justify-between group relative z-10 ${isDark ? 'bg-slate-800 border-slate-700 hover:bg-slate-700' : 'bg-white border-slate-200 hover:bg-slate-50'}`}>
+                        <div onClick={() => setShowActivityLog(true)} className={`border-b px-4 py-2.5 shadow-sm cursor-pointer transition flex items-center justify-between group ${isDark ? 'bg-slate-800 border-slate-700 hover:bg-slate-700' : 'bg-white border-slate-200 hover:bg-slate-50'}`}>
                             <div className="max-w-[1400px] mx-auto flex items-center gap-3 overflow-hidden flex-1 pointer-events-none">
                                 <span className={`px-2 py-0.5 rounded text-[10px] sm:text-xs font-bold shrink-0 border ${isDark ? 'bg-blue-900/50 text-blue-400 border-blue-800' : 'bg-blue-100 text-blue-700 border-blue-200'}`}>Live Sync</span>
                                 <span className={`text-[10px] sm:text-xs truncate font-semibold ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{notifications[0].time} — {notifications[0].text}</span>
@@ -837,7 +833,7 @@
                         </div>
                     )}
 
-                    <main className="max-w-[1400px] mx-auto px-2 sm:px-4 py-6 space-y-8 relative z-10">
+                    <main className="max-w-[1400px] mx-auto px-2 sm:px-4 py-6 space-y-8">
                         {WARD_LIST.map(wardName => {
                             const wardPatients = patients.filter(p => p && p.ward === wardName);
                             if (wardPatients.length === 0) return null;
@@ -853,13 +849,14 @@
                                         </span>
                                     </div>
 
+                                    {/* RESPONSIVE GRID */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
                                         {wardPatients.map(patient => {
                                             const needsWCs = patient.needsWoundCare !== false;
 
-                                            let finalCardClass = `${cardBgClass} border rounded-2xl p-4 sm:p-5 shadow-sm space-y-4 transition-all duration-700 relative isolate `;
+                                            let finalCardClass = `${cardBgClass} border rounded-2xl p-4 sm:p-5 shadow-sm space-y-4 transition-all duration-700 `;
                                             if (highlightedPatient === patient.id) {
-                                                finalCardClass = `bg-blue-50 border rounded-2xl p-4 sm:p-5 ring-4 ring-blue-500 shadow-blue-500/50 scale-[1.02] border-blue-500 z-30 relative space-y-4 transition-all duration-700`;
+                                                finalCardClass = `bg-blue-50 border rounded-2xl p-4 sm:p-5 ring-4 ring-blue-500 shadow-blue-500/50 scale-[1.02] border-blue-500 relative space-y-4 transition-all duration-700`;
                                             } else if (patient.isDischarged) {
                                                 finalCardClass += isDark ? 'opacity-50 grayscale' : 'opacity-80 bg-slate-100 border-slate-300';
                                             } else if (patient.isPostAmputation) {
@@ -869,9 +866,9 @@
                                             return (
                                                 <div key={patient.id} id={`patient-${patient.id}`} className={finalCardClass}>
                                                     {patient.isDischarged && (
-                                                        <div className={`font-black py-2 px-3 rounded-lg border shadow-sm text-[10px] sm:text-xs tracking-wider uppercase mb-2 flex items-center justify-between relative z-20 ${isDark ? 'bg-green-900/30 text-green-400 border-green-800' : 'bg-green-100 text-green-800 border-green-300'}`}>
+                                                        <div className={`font-black py-2 px-3 rounded-lg border shadow-sm text-[10px] sm:text-xs tracking-wider uppercase mb-2 flex items-center justify-between ${isDark ? 'bg-green-900/30 text-green-400 border-green-800' : 'bg-green-100 text-green-800 border-green-300'}`}>
                                                             <span>✅ DISCHARGED (MGH)</span>
-                                                            <button onClick={() => removePatientInstantly(patient.id)} className="cursor-pointer bg-red-600 hover:bg-red-700 text-white text-[9px] sm:text-[10px] font-bold px-2 py-1 rounded shadow-sm transition uppercase relative z-20">
+                                                            <button onClick={() => removePatientInstantly(patient.id)} className="cursor-pointer bg-red-600 hover:bg-red-700 text-white text-[9px] sm:text-[10px] font-bold px-2 py-1 rounded shadow-sm transition uppercase">
                                                                 🗑️ Remove
                                                             </button>
                                                         </div>
@@ -886,13 +883,13 @@
                                                             <div className={`text-[10px] sm:text-xs font-medium uppercase flex items-start mt-1.5 ${textMutedClass}`}>
                                                                 <span className="shrink-0 font-bold mr-1">DX:</span> 
                                                                 <span className="break-words">{patient.dx}</span>
-                                                                {userRole === 'doctor' && <button onClick={() => updateFieldWithPrompt(patient.id, 'dx', patient.dx, 'Diagnosis')} className="cursor-pointer ml-1.5 shrink-0 text-blue-500 hover:text-blue-400 relative z-20">✏️</button>}
+                                                                {userRole === 'doctor' && <button onClick={() => updateFieldWithPrompt(patient.id, 'dx', patient.dx, 'Diagnosis')} className="cursor-pointer ml-1.5 shrink-0 text-blue-500 hover:text-blue-400">✏️</button>}
                                                             </div>
                                                             {patient.surgery && (
                                                                 <div className={`text-[10px] sm:text-xs font-medium uppercase mt-1 flex items-start ${textMutedClass}`}>
                                                                     <span className="shrink-0 font-bold mr-1">SX:</span>
                                                                     <span className="break-words">{patient.surgery}</span>
-                                                                    {userRole === 'doctor' && <button onClick={() => updateFieldWithPrompt(patient.id, 'surgery', patient.surgery, 'Surgery')} className="cursor-pointer ml-1.5 shrink-0 text-blue-500 hover:text-blue-400 relative z-20">✏️</button>}
+                                                                    {userRole === 'doctor' && <button onClick={() => updateFieldWithPrompt(patient.id, 'surgery', patient.surgery, 'Surgery')} className="cursor-pointer ml-1.5 shrink-0 text-blue-500 hover:text-blue-400">✏️</button>}
                                                                 </div>
                                                             )}
                                                         </div>
@@ -921,7 +918,7 @@
                                                         )}
 
                                                         {userRole === 'doctor' && (
-                                                            <button onClick={() => toggleBetadineAllowance(patient.id)} className={`cursor-pointer px-2 py-1 rounded font-bold border text-[9px] sm:text-[10px] transition shadow-sm uppercase relative z-20 ${isDark ? 'bg-slate-700 text-slate-300 border-slate-600 hover:bg-slate-600' : 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200'}`}>
+                                                            <button onClick={() => toggleBetadineAllowance(patient.id)} className={`cursor-pointer px-2 py-1 rounded font-bold border text-[9px] sm:text-[10px] transition shadow-sm uppercase ${isDark ? 'bg-slate-700 text-slate-300 border-slate-600 hover:bg-slate-600' : 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200'}`}>
                                                                 {patient.isPostAmputation ? '🔒 RESTRICT' : '🔓 ALLOW'}
                                                             </button>
                                                         )}
@@ -932,7 +929,7 @@
                                                             <span className="font-bold uppercase tracking-wide">SPECIAL WOUND CARE</span>
                                                             <span className={`font-semibold uppercase flex items-center px-2 py-1 rounded border shadow-sm ${isDark ? 'bg-slate-800 text-slate-300 border-slate-600' : 'bg-white text-slate-600 border-slate-200'}`}>
                                                                 Monitor: {patient.monitor}
-                                                                {userRole === 'doctor' && <button onClick={() => updateFieldWithPrompt(patient.id, 'monitor', patient.monitor, 'Monitor Orders')} className="cursor-pointer ml-1.5 text-blue-500 hover:text-blue-400 relative z-20">✏️</button>}
+                                                                {userRole === 'doctor' && <button onClick={() => updateFieldWithPrompt(patient.id, 'monitor', patient.monitor, 'Monitor Orders')} className="cursor-pointer ml-1.5 text-blue-500 hover:text-blue-400">✏️</button>}
                                                             </span>
                                                         </div>
 
@@ -943,7 +940,7 @@
                                                                     if (userRole === 'doctor') toggleNeedsWoundCare(patient.id);
                                                                     else alert("Only attending doctors can toggle wound care status.");
                                                                 }}
-                                                                className={`cursor-pointer px-2.5 py-1 rounded-full text-[9px] sm:text-[10px] font-bold uppercase transition shadow-sm border relative z-20 ${needsWCs ? 'bg-blue-600 text-white border-blue-600' : (isDark ? 'bg-slate-700 text-slate-300 border-slate-600' : 'bg-slate-200 text-slate-700 border-slate-300')}`}
+                                                                className={`cursor-pointer px-2.5 py-1 rounded-full text-[9px] sm:text-[10px] font-bold uppercase transition shadow-sm border ${needsWCs ? 'bg-blue-600 text-white border-blue-600' : (isDark ? 'bg-slate-700 text-slate-300 border-slate-600' : 'bg-slate-200 text-slate-700 border-slate-300')}`}
                                                             >
                                                                 {needsWCs ? '🩹 Wound Care Needed' : '👁️ Monitor Only'}
                                                             </button>
@@ -973,7 +970,7 @@
                                                                 </div>
 
                                                                 {userRole === 'doctor' && (
-                                                                    <div className={`space-y-2 pt-1 p-3 rounded-xl border shadow-sm relative z-20 ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+                                                                    <div className={`space-y-2 pt-1 p-3 rounded-xl border shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
                                                                         <div className="grid grid-cols-2 gap-2">
                                                                             <div>
                                                                                 <label className="text-[9px] font-bold text-slate-500 block mb-1 uppercase">Protocol Type</label>
@@ -1017,7 +1014,7 @@
                                                                     </div>
                                                                 )}
 
-                                                                <div className="pt-1 relative z-20">
+                                                                <div className="pt-1">
                                                                     {patient.codDone ? (
                                                                         <button onClick={() => {
                                                                             let imgs = patient.codImages && patient.codImages.length > 0 ? patient.codImages : [];
@@ -1049,7 +1046,7 @@
                                                     </div>
 
                                                     {/* NEW FEATURE: DIAGNOSTICS & LABS GALLERY VIEWER */}
-                                                    <div className={`p-3 rounded-xl border space-y-2 relative z-20 ${subPanelClass}`}>
+                                                    <div className={`p-3 rounded-xl border space-y-2 ${subPanelClass}`}>
                                                         <div className="flex justify-between items-center">
                                                             <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wider ${textMutedClass}`}>🩻 Diagnostics, X-Ray & Labs</span>
                                                             <div className="flex gap-1">
@@ -1073,8 +1070,8 @@
                                                                         +{patient.labImages.length - 3}
                                                                     </div>
                                                                 ) : (
-                                                                    patient.labImages.length < 4 && (
-                                                                        <div onClick={() => setUploadLabModal({ patientId: patient.id, images: [] })} className={`cursor-pointer aspect-square rounded-lg border border-dashed border-slate-400 flex items-center justify-center font-bold text-lg hover:opacity-70 transition ${isDark ? 'bg-slate-800 text-slate-500' : 'bg-slate-100 text-slate-400'}`}>
+                                                                    patient.labImages.length < 4 && userRole === 'clerk' && (
+                                                                        <div onClick={() => setUploadLabModal({ patientId: patient.id, images: [] })} className={`cursor-pointer aspect-square rounded-lg border border-dashed flex items-center justify-center font-bold text-lg hover:opacity-70 transition ${isDark ? 'border-slate-600 bg-slate-800 text-slate-500' : 'border-slate-400 bg-slate-100 text-slate-400'}`}>
                                                                             +
                                                                         </div>
                                                                     )
@@ -1086,7 +1083,7 @@
                                                     </div>
 
                                                     <div className="grid grid-cols-2 gap-2">
-                                                        <div className={`p-3 rounded-xl border space-y-1.5 relative z-20 ${subPanelClass}`}>
+                                                        <div className={`p-3 rounded-xl border space-y-1.5 ${subPanelClass}`}>
                                                             <div className="flex justify-between items-center">
                                                                 <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wider ${textMutedClass}`}>Vitals</span>
                                                                 <div className="flex gap-1">
@@ -1094,7 +1091,6 @@
                                                                         <button onClick={() => setViewVitalsModal(patient)} className={`cursor-pointer text-[9px] font-bold px-1.5 py-0.5 rounded border hover:opacity-80 transition ${isDark ? 'bg-slate-600 text-slate-200 border-slate-500' : 'bg-white text-slate-700 border-slate-300'}`}>Logs</button>
                                                                     )}
                                                                     {userRole === 'clerk' && (
-                                                                        // Change: Click triggers the interceptor prompt first
                                                                         <button onClick={() => setVitalsFreqPrompt(patient)} className="cursor-pointer text-[9px] font-bold bg-blue-600 hover:bg-blue-700 text-white px-1.5 py-0.5 rounded transition">+ Log</button>
                                                                     )}
                                                                 </div>
@@ -1110,7 +1106,7 @@
                                                             )}
                                                         </div>
 
-                                                        <div className={`p-3 rounded-xl border space-y-1.5 relative z-20 ${subPanelClass}`}>
+                                                        <div className={`p-3 rounded-xl border space-y-1.5 ${subPanelClass}`}>
                                                             <div className="flex justify-between items-center">
                                                                 <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wider ${textMutedClass}`}>CBG</span>
                                                                 <div className="flex gap-1">
@@ -1137,7 +1133,7 @@
                                                     </div>
 
                                                     <div className="grid grid-cols-2 gap-2 mt-2">
-                                                        <div className={`p-3 rounded-xl border space-y-1.5 relative z-20 ${subPanelClass}`}>
+                                                        <div className={`p-3 rounded-xl border space-y-1.5 ${subPanelClass}`}>
                                                             <div className="flex justify-between items-center">
                                                                 <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wider ${textMutedClass}`}>Urine Out</span>
                                                                 <div className="flex gap-1">
@@ -1162,7 +1158,7 @@
                                                             )}
                                                         </div>
 
-                                                        <div className={`p-3 rounded-xl border space-y-1.5 relative z-20 ${subPanelClass}`}>
+                                                        <div className={`p-3 rounded-xl border space-y-1.5 ${subPanelClass}`}>
                                                             <div className="flex justify-between items-center">
                                                                 <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wider ${textMutedClass}`}>JP Drain</span>
                                                                 <div className="flex gap-1">
@@ -1188,7 +1184,7 @@
                                                         </div>
                                                     </div>
 
-                                                    <div className={`border-t pt-3 space-y-2 relative z-20 ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+                                                    <div className={`border-t pt-3 space-y-2 ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
                                                         <div className="flex justify-between items-center">
                                                             <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider">Physician's Orders</span>
                                                             <div className="flex gap-1.5">
@@ -1219,7 +1215,7 @@
                                                         )}
                                                     </div>
 
-                                                    <div className={`space-y-2 border-t pt-3 relative z-20 ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+                                                    <div className={`space-y-2 border-t pt-3 ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
                                                         <label className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider">Update Location:</label>
                                                         <div className="grid grid-cols-3 gap-1">
                                                             {["Pre-Op", "Post-Op", "In OR", "X-Ray", "UTZ", "CT Scan"].map(loc => {
@@ -1241,7 +1237,7 @@
                                                         </div>
                                                     </div>
 
-                                                    <div className={`flex items-center justify-between px-3 py-2 rounded-xl border text-[10px] sm:text-xs mt-2 uppercase relative z-20 ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                                                    <div className={`flex items-center justify-between px-3 py-2 rounded-xl border text-[10px] sm:text-xs mt-2 uppercase ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
                                                         <span className={`font-medium ${textMutedClass}`}>👤 {patient.watcherName}</span>
                                                         <div className="flex items-center gap-2">
                                                             <a href={`tel:${patient.watcherPhone}`} className={`${isDark ? 'text-emerald-400' : 'text-emerald-600'} font-mono font-bold hover:underline`}>📞 {patient.watcherPhone}</a>
@@ -1259,7 +1255,6 @@
 
                     {/* === MODALS === */}
                     
-                    {/* VITALS FREQUENCY INTERCEPTOR PROMPT */}
                     {vitalsFreqPrompt && (
                         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
                             <div className={`${modalBgClass} rounded-3xl max-w-sm w-full p-6 space-y-4 text-center`}>
@@ -1284,7 +1279,6 @@
                         </div>
                     )}
                     
-                    {/* VITALS LOG MODAL */}
                     {vitalsModal && (
                         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
                             <div className={`${modalBgClass} rounded-3xl max-w-md w-full p-6 space-y-4 uppercase`}>
@@ -1328,7 +1322,6 @@
                         </div>
                     )}
                     
-                    {/* FULL VITALS HISTORY VIEWER (Now strictly 12-hour AM/PM) */}
                     {viewVitalsModal && (
                         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
                             <div className={`${modalBgClass} rounded-3xl max-w-xl w-full max-h-[85vh] flex flex-col overflow-hidden uppercase`}>
@@ -1396,7 +1389,6 @@
                         </div>
                     )}
 
-                    {/* WOUND CARE (COD) PROOF UPLOADER MODAL */}
                     {uploadCodModal && (
                         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
                             <div className={`${modalBgClass} rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 uppercase`}>
@@ -1428,7 +1420,6 @@
                         </div>
                     )}
 
-                    {/* UNIVERSAL IMAGE VIEWER (Used for both Labs and COD Proofs) */}
                     {viewImages && viewImages.length > 0 && (
                         <div className="fixed inset-0 bg-slate-900/95 z-[120] flex flex-col items-center justify-center p-4 backdrop-blur-sm" onClick={(e) => { if(e.target === e.currentTarget) setViewImages(null); }}>
                             <button onClick={() => setViewImages(null)} className="fixed top-6 right-6 text-white font-bold text-sm bg-slate-800 hover:bg-slate-700 px-5 py-2.5 rounded-full transition border border-slate-700 shadow-xl z-50">✕ CLOSE GALLERY</button>
@@ -1449,7 +1440,6 @@
                         </div>
                     )}
                     
-                    {/* MODAL: ADD / EDIT PHYSICIAN'S ORDER */}
                     {orderModal && (
                         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
                             <div className={`${modalBgClass} rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 uppercase`}>
@@ -1488,11 +1478,185 @@
                             </div>
                         </div>
                     )}
-                    
-                    {/* The rest of the view modals (CBG, Output Logs, Physician Orders, Release Notes, Activity Log) follow the exact same updated template structure with strict 12-hr formatting. */}
-                    
-                    {/* ... (End of primary layout blocks) ... */}
 
+                    {viewOrdersModal && (
+                        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                            <div className={`${modalBgClass} rounded-3xl max-w-xl w-full max-h-[85vh] flex flex-col overflow-hidden uppercase`}>
+                                <div className="p-5 border-b border-slate-700 flex justify-between items-center bg-slate-900 text-white">
+                                    <div>
+                                        <h2 className="text-lg font-bold">🩺 ALL PHYSICIAN ORDERS</h2>
+                                        <p className="text-xs text-slate-400">{viewOrdersModal.name} • {viewOrdersModal.ward}</p>
+                                    </div>
+                                    <button onClick={() => setViewOrdersModal(null)} className="text-slate-400 hover:text-white font-bold text-xl px-2">✕</button>
+                                </div>
+                                <div className="p-6 overflow-y-auto flex-1 space-y-4">
+                                    {viewOrdersModal.physicianOrders && viewOrdersModal.physicianOrders.length > 0 ? viewOrdersModal.physicianOrders.map(order => (
+                                        <div key={order.id} className={`p-4 rounded-2xl border text-xs shadow-sm space-y-2 ${isDark ? (DOCTOR_COLORS_DARK[order.doctorName.replace(' ✔️', '')] || 'bg-slate-800 border-slate-700 text-slate-300') : (DOCTOR_COLORS[order.doctorName.replace(' ✔️', '')] || 'bg-slate-50 border-slate-200 text-slate-800')}`}>
+                                            <div className="flex justify-between font-bold border-b border-black/10 pb-1.5 items-center">
+                                                <span className="text-sm flex items-center">{order.doctorName.replace(' ✔️', '')} <VerifiedBlueTick /></span>
+                                                <div className="flex items-center gap-3">
+                                                    <span className="opacity-75">{order.date}</span>
+                                                    {userRole === 'doctor' && order.doctorName.replace(' ✔️', '') === activeUser.replace(' ✔️', '') && (
+                                                        <div className="flex gap-2">
+                                                            {(!order.editCount || order.editCount < 5) && (
+                                                                <button onClick={() => { setOrderModal({ patientId: viewOrdersModal.id, findings: order.findings, orders: order.orders, editId: order.id }); setViewOrdersModal(null); }} className="bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1 rounded font-bold shadow-sm">EDIT</button>
+                                                            )}
+                                                            <button onClick={() => deletePhysicianOrder(viewOrdersModal.id, order.id)} className="bg-red-600 hover:bg-red-700 text-white px-2.5 py-1 rounded font-bold shadow-sm">DELETE</button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            {order.findings && <p><strong className="opacity-75">FINDINGS:</strong> {order.findings}</p>}
+                                            {order.orders && <p><strong className="opacity-75">ORDERS/LABS:</strong> {order.orders}</p>}
+                                        </div>
+                                    )) : <div className="text-center text-slate-500 py-4">No physician orders written yet.</div>}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {viewCbgModal && (
+                        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                            <div className={`${modalBgClass} rounded-3xl max-w-xl w-full max-h-[85vh] flex flex-col overflow-hidden uppercase`}>
+                                <div className="p-5 border-b border-slate-700 flex justify-between items-center bg-slate-900 text-white">
+                                    <div>
+                                        <h2 className="text-lg font-bold">🩸 COMPLETE CBG LOG</h2>
+                                        <p className="text-xs text-slate-400">{viewCbgModal.name} • {viewCbgModal.ward}</p>
+                                    </div>
+                                    <button onClick={() => setViewCbgModal(null)} className="text-slate-400 hover:text-white font-bold text-xl px-2">✕</button>
+                                </div>
+                                <div className="p-6 overflow-y-auto flex-1 space-y-3">
+                                    {viewCbgModal.cbgHistory && viewCbgModal.cbgHistory.length > 0 ? viewCbgModal.cbgHistory.map(c => (
+                                        <div key={c.id} className={`p-4 rounded-2xl border text-xs space-y-2 shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                                            <div className={`flex justify-between font-bold border-b pb-1.5 items-center ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+                                                <span className={`px-2 py-0.5 rounded border ${isDark ? 'bg-blue-900/30 text-blue-400 border-blue-800' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>{c.dateStr} — {c.shift}</span>
+                                                <span className="text-slate-400">{c.timestamp}</span>
+                                            </div>
+                                            <div className={`p-2.5 rounded-xl border flex justify-between items-center ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
+                                                <span>CBG LEVEL: <strong className={`font-mono text-sm ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>{c.cbgVal}</strong></span>
+                                                <span className={`px-2 py-0.5 rounded font-bold border text-[11px] ${isDark ? 'bg-amber-900/30 text-amber-400 border-amber-800' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>{c.cbgTiming}</span>
+                                            </div>
+                                            <div className="text-[10px] text-slate-400 text-right pt-0.5 font-medium">LOGGED BY: {c.loggedBy}</div>
+                                        </div>
+                                    )) : <div className="text-center text-slate-500 py-4">No CBG Logs Available</div>}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {viewOutputModal && (
+                        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                            <div className={`${modalBgClass} rounded-3xl max-w-xl w-full max-h-[85vh] flex flex-col overflow-hidden uppercase`}>
+                                <div className="p-5 border-b border-slate-700 flex justify-between items-center bg-slate-900 text-white">
+                                    <div>
+                                        <h2 className="text-lg font-bold">{viewOutputModal.type === 'Urine' ? '💧 URINE OUTPUT LOG' : '🩸 JP DRAIN LOG'}</h2>
+                                        <p className="text-xs text-slate-400">{viewOutputModal.patient.name} • {viewOutputModal.patient.ward}</p>
+                                    </div>
+                                    <button onClick={() => setViewOutputModal(null)} className="text-slate-400 hover:text-white font-bold text-xl px-2">✕</button>
+                                </div>
+                                <div className="p-6 overflow-y-auto flex-1 space-y-3">
+                                    {(() => {
+                                        const hx = viewOutputModal.type === 'Urine' ? viewOutputModal.patient.urineOutputHistory : viewOutputModal.patient.jpDrainHistory;
+                                        if (hx && hx.length > 0) {
+                                            return hx.map(o => (
+                                                <div key={o.id} className={`p-4 rounded-2xl border text-xs space-y-2 shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                                                    <div className={`flex justify-between font-bold border-b pb-1.5 items-center ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+                                                        <span className={`px-2 py-0.5 rounded border ${isDark ? 'bg-blue-900/30 text-blue-400 border-blue-800' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>{o.dateStr} — {o.shift}</span>
+                                                        <span className="text-slate-400">{o.timestamp}</span>
+                                                    </div>
+                                                    <div className={`p-2.5 rounded-xl border flex flex-col gap-1 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
+                                                        <div className="flex justify-between items-center">
+                                                            <span>VOLUME: <strong className={`font-mono text-sm ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>{o.volume}</strong></span>
+                                                        </div>
+                                                        {o.desc && <span className={`text-[10px] ${textMutedClass}`}>Note: {o.desc}</span>}
+                                                    </div>
+                                                    <div className="text-[10px] text-slate-400 text-right pt-0.5 font-medium">LOGGED BY: {o.loggedBy}</div>
+                                                </div>
+                                            ));
+                                        } else {
+                                            return <div className="text-center text-slate-500 py-4">No Output Logs Available</div>;
+                                        }
+                                    })()}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {cbgModal && (
+                        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                            <div className={`${modalBgClass} rounded-3xl max-w-md w-full p-6 space-y-4 uppercase`}>
+                                <div className="flex justify-between items-center">
+                                    <h2 className={`text-lg font-bold ${textMainClass}`}>🩸 LOG CBG</h2>
+                                    <button onClick={() => setCbgModal(null)} className="text-slate-400 hover:text-slate-200 font-bold">✕</button>
+                                </div>
+                                <p className={`text-xs font-medium ${textMutedClass}`}>{cbgModal.name}</p>
+                                <form onSubmit={(e) => saveCbg(e, cbgModal.id)} className="space-y-4">
+                                    <div>
+                                        <label className={`text-xs font-bold mb-1 block ${textMutedClass}`}>CBG Level (mg/dL)</label>
+                                        <input name="cbgVal" type="number" placeholder="110" className={`w-full rounded-xl px-3 py-2.5 text-sm uppercase font-medium focus:outline-none focus:ring-1 focus:ring-blue-500 ${inputBgClass}`} />
+                                    </div>
+                                    <div>
+                                        <label className={`text-xs font-bold mb-1 block ${textMutedClass}`}>Timing / Schedule</label>
+                                        <select name="cbgTiming" className={`w-full rounded-xl px-3 py-2.5 text-xs font-medium uppercase focus:outline-none focus:ring-1 focus:ring-blue-500 ${inputBgClass}`}>
+                                            {TIMING_ABBRS.map(t => <option key={t} value={t}>{t}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="pt-2 flex gap-3">
+                                        <button type="button" onClick={() => setCbgModal(null)} className={`flex-1 py-3 rounded-xl font-bold text-sm transition ${isDark ? 'bg-slate-700 text-white hover:bg-slate-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>CANCEL</button>
+                                        <button type="submit" className="flex-1 py-3 rounded-xl font-bold text-sm bg-blue-600 text-white hover:bg-blue-700 transition shadow-sm">SAVE CBG</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+
+                    {outputModal && (
+                        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                            <div className={`${modalBgClass} rounded-3xl max-w-md w-full p-6 space-y-4 uppercase`}>
+                                <div className="flex justify-between items-center">
+                                    <h2 className={`text-lg font-bold ${textMainClass}`}>{outputModal.type === 'Urine' ? '💧 LOG URINE OUTPUT' : '🩸 LOG JP DRAIN'}</h2>
+                                    <button onClick={() => setOutputModal(null)} className="text-slate-400 hover:text-slate-200 font-bold">✕</button>
+                                </div>
+                                <p className={`text-xs font-medium ${textMutedClass}`}>{outputModal.name}</p>
+                                <form onSubmit={(e) => saveOutput(e, outputModal.patientId)} className="space-y-4">
+                                    <div>
+                                        <label className={`text-xs font-bold mb-1 block ${textMutedClass}`}>Volume (mL)</label>
+                                        <input name="volume" type="number" placeholder="250" className={`w-full rounded-xl px-3 py-2.5 text-sm uppercase font-medium focus:outline-none focus:ring-1 focus:ring-blue-500 ${inputBgClass}`} />
+                                    </div>
+                                    <div>
+                                        <label className={`text-xs font-bold mb-1 block ${textMutedClass}`}>Description / Notes (Optional)</label>
+                                        <input name="desc" type="text" placeholder="e.g. Amber yellow, Serosanguinous" className={`w-full rounded-xl px-3 py-2.5 text-sm uppercase font-medium focus:outline-none focus:ring-1 focus:ring-blue-500 ${inputBgClass}`} />
+                                    </div>
+                                    <div className="pt-2 flex gap-3">
+                                        <button type="button" onClick={() => setOutputModal(null)} className={`flex-1 py-3 rounded-xl font-bold text-sm transition ${isDark ? 'bg-slate-700 text-white hover:bg-slate-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>CANCEL</button>
+                                        <button type="submit" className="flex-1 py-3 rounded-xl font-bold text-sm bg-blue-600 text-white hover:bg-blue-700 transition shadow-sm">SAVE OUTPUT</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+                    
+                    {/* ACTIVITY LOG MODAL */}
+                    {showActivityLog && (
+                        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
+                            <div className={`${modalBgClass} border rounded-2xl max-w-lg w-full max-h-[80vh] flex flex-col uppercase overflow-hidden`}>
+                                <div className={`p-4 border-b flex justify-between items-center ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                                    <h2 className={`text-lg font-bold ${textMainClass}`}>📋 ACTIVITY & UPDATE LOG</h2>
+                                    <button onClick={() => setShowActivityLog(false)} className="text-slate-400 hover:text-slate-200 font-bold px-2 text-lg">✕</button>
+                                </div>
+                                <div className="p-4 overflow-y-auto flex-1 space-y-3">
+                                    {notifications.map(n => (
+                                        <div key={n.id} onClick={() => jumpToPatient(n.patientId)} className={`p-3 rounded-lg border text-sm transition ${n.patientId ? (isDark ? 'bg-slate-800 border-slate-700 hover:border-blue-500 cursor-pointer' : 'bg-white border-slate-200 hover:border-blue-400 hover:shadow-md cursor-pointer') : (isDark ? 'bg-slate-900 border-slate-800 text-slate-400' : 'bg-slate-50 border-slate-100 text-slate-500')}`}>
+                                            <div className="text-xs text-slate-400 font-bold mb-1">{n.time}</div>
+                                            <div className={`font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{n.text}</div>
+                                            {n.patientId && <div className="text-xs text-blue-500 font-bold mt-2 flex items-center gap-1">JUMP TO PATIENT ➔</div>}
+                                        </div>
+                                    ))}
+                                    {notifications.length === 0 && <div className="text-center text-slate-400 text-sm py-4">No recent activity.</div>}
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             );
         }
