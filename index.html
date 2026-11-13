@@ -18,11 +18,11 @@
 
     <script type="text/babel">
         // ==========================================
-        // 🔑 REQUIRED: YOUR GEMINI API KEY
+        // 🔑 GEMINI AI ENGINE API KEY (HARDCODED)
         // ==========================================
-        const GEMINI_API_KEY = "PASTE_YOUR_GEMINI_API_KEY_HERE"; // Get this from Google AI Studio
+        const GEMINI_API_KEY = "AQ.Ab8RN6LotUmpouOBp-q8Cv3eWRUeyrhq4A8SRxs8XsWb76QGgQ";
 
-        // 🔥 PRE-FILLED FIREBASE CONFIGURATION 🔥
+        // 🔥 FIREBASE CONFIGURATION 🔥
         const firebaseConfig = {
             apiKey: "AIzaSyCXkkPVmaMSBvD1r4auODZiN2mFMhWDDMU",
             authDomain: "pcgh-tracker.firebaseapp.com",
@@ -47,9 +47,9 @@
 
         const { useState, useEffect, useRef } = React;
 
-        const CURRENT_VERSION = "v3.9.0";
+        const CURRENT_VERSION = "v3.9.1";
         const VERSION_LOG_NOTES = [
-            { category: "AI Endorsement Parser", text: "Added a built-in Gemini AI pasteboard to the Add Patient screen. Paste a messy Viber endorsement, and the AI will automatically fill the admission form for you." },
+            { category: "AI Endorsement Parser", text: "Integrated Gemini AI Engine. Paste a messy Viber endorsement into the Add Patient screen to automatically fill the form." },
             { category: "Critical Click Fix", text: "Fixed the Z-Index header issue that was blocking clicks on the Add Patient and SOP buttons." },
             { category: "Strict 12-Hour Format", text: "All Vitals, CBG, and Output logs strictly follow a standard 12-hour AM/PM format." },
             { category: "Vitals Frequency Prompts", text: "The system now requires selecting a monitoring frequency before Vitals can be logged." }
@@ -206,7 +206,6 @@
             
             const [addPatientModal, setAddPatientModal] = useState(false);
             
-            // State for Gemini AI Pasteboard
             const [aiEndorsementText, setAiEndorsementText] = useState("");
             const [isAiLoading, setIsAiLoading] = useState(false);
 
@@ -453,9 +452,6 @@
             // ==========================================
             const handleAiExtraction = async () => {
                 if (!aiEndorsementText.trim()) return alert("Please paste an endorsement first.");
-                if (GEMINI_API_KEY === "PASTE_YOUR_GEMINI_API_KEY_HERE" || !GEMINI_API_KEY) {
-                    return alert("🚨 ERROR: Gemini API Key is missing. Please add your key at the top of the HTML file.");
-                }
 
                 setIsAiLoading(true);
                 try {
@@ -480,16 +476,15 @@
                     });
 
                     const data = await response.json();
-                    let aiResultText = data.candidates[0].content.parts[0].text.trim();
+                    if (!data.candidates) throw new Error("Invalid API key or response");
                     
-                    // Strip markdown if AI stubbornly adds it
+                    let aiResultText = data.candidates[0].content.parts[0].text.trim();
                     if (aiResultText.startsWith('```json')) {
                         aiResultText = aiResultText.replace(/```json\n?/, '').replace(/```$/, '');
                     }
 
                     const extractedData = JSON.parse(aiResultText);
 
-                    // Auto-fill the form fields by setting element values directly
                     const form = document.getElementById('addPatientForm');
                     if (form && extractedData) {
                         form.patientName.value = extractedData.name || "";
@@ -499,12 +494,10 @@
                         form.patientDx.value = extractedData.dx || "";
                         if(extractedData.monitor) form.patientMonitor.value = extractedData.monitor;
                         
-                        // Select Custom COD to dump the AI's string into
                         form.codProtocol.value = 'CUSTOM';
                         document.getElementById('addCustomCodBox').style.display = 'block';
                         form.customCod.value = extractedData.cod || "";
                         
-                        // Clear the pasteboard and reset
                         setAiEndorsementText("");
                         alert(`✅ AI Extraction Successful! Form auto-filled for: ${extractedData.name}`);
                     }
@@ -1834,7 +1827,6 @@
                             </div>
                         </div>
                     )}
-
                 </div>
             );
         }
