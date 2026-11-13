@@ -17,6 +17,11 @@
     <div id="root"></div>
 
     <script type="text/babel">
+        // ==========================================
+        // 🔑 GEMINI AI ENGINE API KEY (HARDCODED)
+        // ==========================================
+        const GEMINI_API_KEY = "AQ.Ab8RN6LotUmpouOBp-q8Cv3eWRUeyrhq4A8SRxs8XsWb76QGgQ";
+
         // 🔥 FIREBASE CONFIGURATION 🔥
         const firebaseConfig = {
             apiKey: "AIzaSyCXkkPVmaMSBvD1r4auODZiN2mFMhWDDMU",
@@ -42,12 +47,12 @@
 
         const { useState, useEffect, useRef } = React;
 
-        const CURRENT_VERSION = "v3.9.2";
+        const CURRENT_VERSION = "v4.0.0";
         const VERSION_LOG_NOTES = [
-            { category: "Security Update", text: "Removed hardcoded API key to prevent GitHub auto-deletion. Added a secure Settings (⚙️) menu to store the key locally in your browser." },
+            { category: "Crash Resolved", text: "Fixed a fatal render bug where older database entries missing a Doctor's name caused a blank white screen." },
+            { category: "Click Issues Fixed", text: "Restored all missing Modals (Add Patient, SOPs, Activity Log) and ensured they sit on the absolute top layer." },
             { category: "AI Endorsement Parser", text: "Integrated Gemini AI Engine. Paste a messy Viber endorsement into the Add Patient screen to automatically fill the form." },
-            { category: "Strict 12-Hour Format", text: "All Vitals, CBG, and Output logs strictly follow a standard 12-hour AM/PM format." },
-            { category: "Vitals Frequency Prompts", text: "The system now requires selecting a monitoring frequency before Vitals can be logged." }
+            { category: "Strict 12-Hour Format", text: "All Vitals, CBG, and Output logs strictly follow a standard 12-hour AM/PM format with frequency prompts." }
         ];
 
         const WARD_LIST = [
@@ -79,30 +84,7 @@
         };
 
         const INITIAL_PATIENTS = [
-            { id: 1, name: "Pascual, Gervacio (9/M)", ward: "PEDIATRICS SX WARD", room: "", dx: "Acute Appendicitis", surgery: "Appendectomy", monitor: "VSQ4", cod: "DRY WITH BETADINE OD", codTiming: "OD", location: "Post-Op", watcherName: "Parent / Guardian", watcherPhone: "0917-550-0101", isPostAmputation: true, ...COMMON_FIELDS },
-            { id: 2, name: "De Guzman, Lolita (76/F)", ward: "FEMALE SURGERY WARD", room: "", dx: "Femoral Neck Fracture (L) sec to Fall", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "", watcherName: "Family Watcher", watcherPhone: "0917-550-0102", ...COMMON_FIELDS },
-            { id: 3, name: "Villagomez, Evelyn Evasio (70/F)", ward: "FEMALE SURGERY WARD", room: "", dx: "Femoral Neck Fracture Sec. to Fall", surgery: "", monitor: "VSQ4", cod: "WOUND CARE", codTiming: "OD", location: "", watcherName: "Family Watcher", watcherPhone: "0917-550-0102", ...COMMON_FIELDS },
-            { id: 4, name: "Menju, Rebecca (70/F)", ward: "FEMALE SURGERY WARD", room: "", dx: "Partial Gut Obstruction sec to Sigmoid Mass", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "", watcherName: "Family Watcher", watcherPhone: "0917-550-0104", ...COMMON_FIELDS },
-            { id: 5, name: "Cajeda, Maybeline (34/F)", ward: "FEMALE SURGERY WARD", room: "", dx: "Multiple Injuries sec to VA (Laceration (L) Leg; Femoral Fracture (L))", surgery: "", monitor: "VSQ4", cod: "DRY WITH BETADINE OD", codTiming: "OD", location: "", watcherName: "Family Watcher", watcherPhone: "0917-550-0105", isPostAmputation: true, ...COMMON_FIELDS },
-            { id: 6, name: "Peralta, Reymark (28/M)", ward: "MALE SURGERY WARD", room: "", dx: "Multiple Injuries sec to VA (Femoral Shaft Fracture (L); Abrasion (L) Knee and Thigh)", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "", watcherName: "Family Watcher", watcherPhone: "0917-550-0106", ...COMMON_FIELDS },
-            { id: 7, name: "Fernado, Carlos (63/M)", ward: "MALE SURGERY WARD", room: "", dx: "T/C Gastric Outlet Obstruction sec to G1 Mass", surgery: "", monitor: "VSQ4 | CBG: TID", cod: "DRY WITH BETADINE OD", codTiming: "OD", location: "", watcherName: "Family Watcher", watcherPhone: "0917-550-0107", isPostAmputation: true, ...COMMON_FIELDS },
-            { id: 8, name: "Vidal, Alberto (51/M)", ward: "MALE SURGERY WARD", room: "", dx: "T/C Open Fracture with Dislocation, Tibia-Fibula (R) sec to RCI", surgery: "", monitor: "VSQ4", cod: "DRY WITH BETADINE OD (DO NOT REMOVE CAST)", codTiming: "OD", location: "", watcherName: "Family Watcher", watcherPhone: "0917-550-0108", isPostAmputation: true, ...COMMON_FIELDS },
-            { id: 9, name: "Julom, El Quinwell (28/M)", ward: "MALE SURGERY WARD", room: "", dx: "Stab Wound Abdomen", surgery: "Exploratory Laparotomy", monitor: "VSQ4 | JP Drain | NGT | Urine Output", cod: "DRY WITH BETADINE OD", codTiming: "OD", location: "", watcherName: "Family Watcher", watcherPhone: "0917-550-0109", isPostAmputation: true, ...COMMON_FIELDS },
-            { id: 10, name: "Montano, Luzviminda (52/F)", ward: "ENT / OPHTHA WARD", room: "", dx: "Sigmoid Adenocarcinoma Stage 3, Colovesical Fistula", surgery: "Colostomy", monitor: "VSQ4", cod: "DRY WITH BETADINE OD | JP drain & colostomy drain", codTiming: "OD", location: "", watcherName: "Family Watcher", watcherPhone: "0917-550-0110", ...COMMON_FIELDS },
-            { id: 11, name: "Manlagit, Allan (44/M)", ward: "ISOLATION SURGERY WARD", room: "", dx: "Sepsis sec to Decubitus Ulcer Grade IV", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "", watcherName: "Family Watcher", watcherPhone: "0917-550-0115", ...COMMON_FIELDS },
-            { id: 12, name: "Quitain, Rodel (52/M)", ward: "ISOLATION SURGERY WARD", room: "", dx: "Non-healing Wound (L) Heel (Note: presence of maggots)", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH THIRD'S SOLUTION OD", codTiming: "OD", location: "", watcherName: "Family Watcher", watcherPhone: "0917-550-0114", ...COMMON_FIELDS },
-            { id: 13, name: "Eribal, Zandro (54/M)", ward: "ISOLATION SURGERY WARD", room: "", dx: "Non-healing Wound (L) Thigh, T2 DM", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "", watcherName: "Family Watcher", watcherPhone: "0917-550-0113", ...COMMON_FIELDS },
-            { id: 14, name: "Cabangbang, Ofelia (66/F)", ward: "ISOLATION SURGERY WARD", room: "", dx: "Diabetic Foot (R)", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "", watcherName: "Family Watcher", watcherPhone: "0917-550-0112", ...COMMON_FIELDS },
-            { id: 15, name: "Caballero, Daniel Seth", ward: "SURGICAL SUITE ROOM", room: "", dx: "Fracture, Middle 3rd Humerus (R)", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "Post-Op", watcherName: "Family Watcher", watcherPhone: "0917-550-0116", ...COMMON_FIELDS },
-            { id: 16, name: "Buenviaje, Nilda Cajipo (69/F)", ward: "CICU", room: "10", dx: "Diabetic Foot (R)", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "", watcherName: "Family Watcher", watcherPhone: "0917-550-0117", ...COMMON_FIELDS },
-            { id: 17, name: "Lumandez, Pablito Jr.", ward: "CICU", room: "4", dx: "Diabetic Foot / Wound", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "", watcherName: "Family Watcher", watcherPhone: "0917-550-0118", ...COMMON_FIELDS },
-            { id: 18, name: "Atanante, Jennifer", ward: "IM WARD", room: "FW-1", dx: "Cellulitis / Wound Care", surgery: "", monitor: "VSQ4", cod: "Hansol Chlorhexidine + Mupirocin", codTiming: "OD", location: "", watcherName: "Family Watcher", watcherPhone: "0917-550-0120", ...COMMON_FIELDS },
-            { id: 19, name: "Garrido, Revelyn", ward: "IM WARD", room: "FW-2", dx: "Sacral Ulcers", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "", watcherName: "Family Watcher", watcherPhone: "0917-550-0121", ...COMMON_FIELDS },
-            { id: 20, name: "Gutlean, Evovoie", ward: "IM WARD", room: "MW-1", dx: "Wound Care", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "", watcherName: "Family Watcher", watcherPhone: "0917-550-0122", ...COMMON_FIELDS },
-            { id: 21, name: "Provido, Alfredo", ward: "IM WARD", room: "MW-2", dx: "Wound Care", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "", watcherName: "Family Watcher", watcherPhone: "0917-550-0122", ...COMMON_FIELDS },
-            { id: 22, name: "Ellaso, Eric", ward: "IM WARD", room: "MW-2", dx: "Wound Care", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION OD", codTiming: "OD", location: "", watcherName: "Family Watcher", watcherPhone: "0917-550-0122", ...COMMON_FIELDS },
-            { id: 23, name: "Zuniga, Rodolfo", ward: "IM WARD", room: "MW-4", dx: "Sepsis sec to Sacral Ulcers", surgery: "", monitor: "VSQ4", cod: "WET-TO-DRY WITH DAKIN'S SOLUTION BID", codTiming: "BID", location: "", watcherName: "Family Watcher", watcherPhone: "0917-550-0119", ...COMMON_FIELDS },
-            { id: 24, name: "Castillejos, Draven Neil (2/M)", ward: "PEDIATRIC WARD", room: "Room-6", dx: "Perianal cellulitis abscess, T/C sepsis, T/C ALL", surgery: "", monitor: "VSQ4", cod: "Apply Flammazine and wound care BID", codTiming: "BID", location: "", watcherName: "Parent / Guardian", watcherPhone: "0917-550-0123", ...COMMON_FIELDS }
+            { id: 1, name: "Pascual, Gervacio (9/M)", ward: "PEDIATRICS SX WARD", room: "", dx: "Acute Appendicitis", surgery: "Appendectomy", monitor: "VSQ4", cod: "DRY WITH BETADINE OD", codTiming: "OD", location: "Post-Op", watcherName: "Parent / Guardian", watcherPhone: "0917-550-0101", isPostAmputation: true, ...COMMON_FIELDS }
         ];
 
         const DOCTORS = [
@@ -135,10 +117,7 @@
             "Dr. Ann Onbit": "bg-teal-900/30 border-teal-500 text-teal-200"
         };
 
-        const TIMING_ABBRS = [
-            "OD", "BID", "TID", "QID", "Q1H", "Q2H", "Q3H", "Q4H", "QHS", "QOD", "ATC", "AC", "PC"
-        ];
-        
+        const TIMING_ABBRS = ["OD", "BID", "TID", "QID", "Q1H", "Q2H", "Q3H", "Q4H", "QHS", "QOD", "ATC", "AC", "PC"];
         const VITALS_FREQ_OPTIONS = ["VSQ4", "VSQ15", "VSQ1", "VSQ30"];
 
         const get12HourTime = () => {
@@ -177,7 +156,6 @@
             const activePresenceRef = useRef(null);
 
             const [showSops, setShowSops] = useState(false);
-            const [showSettings, setShowSettings] = useState(false); // Settings Modal State
             
             const [uploadCodModal, setUploadCodModal] = useState(null); 
             const [uploadLabModal, setUploadLabModal] = useState(null);
@@ -202,15 +180,9 @@
             
             const [addPatientModal, setAddPatientModal] = useState(false);
             
+            // State for Gemini AI Pasteboard
             const [aiEndorsementText, setAiEndorsementText] = useState("");
             const [isAiLoading, setIsAiLoading] = useState(false);
-            const [storedApiKey, setStoredApiKey] = useState("");
-
-            // Load API key from Local Storage on mount
-            useEffect(() => {
-                const savedKey = localStorage.getItem('pcgh_gemini_key');
-                if (savedKey) setStoredApiKey(savedKey);
-            }, []);
 
             useEffect(() => {
                 const body = document.getElementById('bodyRoot');
@@ -246,6 +218,7 @@
                             if (!p.urineOutputHistory) p.urineOutputHistory = [];
                             if (!p.jpDrainHistory) p.jpDrainHistory = [];
                             if (!p.labImages) p.labImages = [];
+                            if (!p.physicianOrders) p.physicianOrders = [];
                             return p;
                         }).filter(Boolean);
 
@@ -372,16 +345,6 @@
                 setTheme('light');
             };
 
-            const saveApiKey = (e) => {
-                e.preventDefault();
-                const form = e.target;
-                const newKey = form.apiKey.value.trim();
-                localStorage.setItem('pcgh_gemini_key', newKey);
-                setStoredApiKey(newKey);
-                setShowSettings(false);
-                alert("API Key saved securely to your local browser storage.");
-            };
-
             const handleDailyReset = () => {
                 if (window.confirm("🚨 Reset all COD statuses, images, vitals, CBG, and output logs for a new day? Patient orders remain safe.")) {
                     syncPatients(prev => prev.map(p => ({ ...p, codDone: false, codImages: [], vitalsHistory: [], cbgHistory: [], urineOutputHistory: [], jpDrainHistory: [] })));
@@ -422,7 +385,6 @@
                 if (newName === null) return;
                 const newPhone = prompt("Enter Watcher / Guardian Phone Number:", p.watcherPhone || "0917-000-0000");
                 if (newPhone === null) return;
-
                 addNotification(`👤 ${activeUser} updated Watcher details for ${p.name}.`, id);
                 syncPatients(prev => prev.map(pat => pat.id === id ? { ...pat, watcherName: newName.toUpperCase(), watcherPhone: newPhone } : pat));
             };
@@ -465,9 +427,6 @@
             // ==========================================
             const handleAiExtraction = async () => {
                 if (!aiEndorsementText.trim()) return alert("Please paste an endorsement first.");
-                if (!storedApiKey) {
-                    return alert("🚨 ERROR: Gemini API Key is missing. Click the ⚙️ Settings gear in the header to add your key.");
-                }
 
                 setIsAiLoading(true);
                 try {
@@ -485,7 +444,7 @@
                     Endorsement text to parse: "${aiEndorsementText}"
                     `;
 
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${storedApiKey}`, {
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
@@ -506,6 +465,12 @@
                         form.patientName.value = extractedData.name || "";
                         if (extractedData.ward && WARD_LIST.includes(extractedData.ward.toUpperCase())) {
                             form.patientWard.value = extractedData.ward.toUpperCase();
+                            const roomBox = document.getElementById('roomBox');
+                            if (extractedData.ward.toUpperCase().includes('ISOLATION') || extractedData.ward.toUpperCase().includes('IM')) {
+                                roomBox.style.display = 'block';
+                            } else {
+                                roomBox.style.display = 'none';
+                            }
                         }
                         form.patientDx.value = extractedData.dx || "";
                         if(extractedData.monitor) form.patientMonitor.value = extractedData.monitor;
@@ -519,7 +484,7 @@
                     }
                 } catch (error) {
                     console.error("AI Extraction Error:", error);
-                    alert("Failed to parse the endorsement. The API key might be invalid, or the text is too garbled.");
+                    alert("Failed to parse the endorsement. The text might be too garbled, or the API key is invalid/expired.");
                 } finally {
                     setIsAiLoading(false);
                 }
@@ -528,7 +493,6 @@
             const handleAddPatientSubmit = (e) => {
                 e.preventDefault();
                 const form = e.target;
-                
                 let finalCod = "";
                 if (form.codProtocol.value === 'CUSTOM') {
                     finalCod = form.customCod.value.toUpperCase();
@@ -540,7 +504,7 @@
                     id: Date.now(),
                     name: form.patientName.value.toUpperCase(),
                     ward: form.patientWard.value,
-                    room: form.patientWard.value.includes('ISOLATION') || form.patientWard.includes('IM') ? form.patientRoom.value : '',
+                    room: form.patientWard.value.includes('ISOLATION') || form.patientWard.value.includes('IM') ? form.patientRoom.value : '',
                     dx: form.patientDx.value.toUpperCase(),
                     surgery: form.patientSurgery.value ? form.patientSurgery.value.toUpperCase() : '',
                     monitor: form.patientMonitor.value.toUpperCase() || 'VSQ4',
@@ -864,31 +828,27 @@
                                     </div>
                                 </div>
 
-                                <div className="flex flex-wrap items-center gap-2 relative z-[9999]">
-                                    <button onClick={() => setAddPatientModal(true)} className="pointer-events-auto cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-2 rounded-lg text-xs font-bold shadow-sm transition flex items-center gap-1.5 relative z-[9999]">
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <button onClick={() => setAddPatientModal(true)} className="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-2 rounded-lg text-xs font-bold shadow-sm transition flex items-center gap-1.5">
                                         ➕ Add Patient
                                     </button>
                                     {userRole === 'doctor' && (
-                                        <button onClick={handleDailyReset} className={`pointer-events-auto cursor-pointer px-3.5 py-2 rounded-lg text-xs font-bold transition border relative z-[9999] ${isDark ? 'bg-red-900/30 text-red-400 border-red-800/50 hover:bg-red-900/50' : 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100'}`}>
+                                        <button onClick={handleDailyReset} className={`cursor-pointer px-3.5 py-2 rounded-lg text-xs font-bold transition border ${isDark ? 'bg-red-900/30 text-red-400 border-red-800/50 hover:bg-red-900/50' : 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100'}`}>
                                             🌅 Reset Ward
                                         </button>
                                     )}
-                                    <button onClick={() => setShowSops(true)} className={`pointer-events-auto cursor-pointer px-3.5 py-2 rounded-lg text-xs font-bold transition border relative z-[9999] ${isDark ? 'bg-amber-900/30 text-amber-400 border-amber-800/50 hover:bg-amber-900/50' : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'}`}>
+                                    <button onClick={() => setShowSops(true)} className={`cursor-pointer px-3.5 py-2 rounded-lg text-xs font-bold transition border ${isDark ? 'bg-amber-900/30 text-amber-400 border-amber-800/50 hover:bg-amber-900/50' : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'}`}>
                                         📋 SOPs & Rules
                                     </button>
-                                    <button onClick={() => setShowSettings(true)} className={`pointer-events-auto cursor-pointer px-3 py-2 rounded-lg text-lg transition border relative z-[9999] ${isDark ? 'bg-slate-800 border-slate-700 hover:bg-slate-700 text-slate-300' : 'bg-slate-100 border-slate-300 hover:bg-slate-200 text-slate-600'}`} title="Settings & API Key">
-                                        ⚙️
-                                    </button>
-                                    <button onClick={handleLogout} className={`pointer-events-auto cursor-pointer px-3.5 py-2 rounded-lg text-xs font-bold transition border relative z-[9999] ${isDark ? 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700' : 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200'}`}>
+                                    <button onClick={handleLogout} className={`cursor-pointer px-3.5 py-2 rounded-lg text-xs font-bold transition border ${isDark ? 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700' : 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200'}`}>
                                         Sign Out
                                     </button>
-                                    <button onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} className={`pointer-events-auto cursor-pointer px-3 py-2 rounded-lg text-lg transition border relative z-[9999] ${isDark ? 'bg-slate-800 border-slate-700 hover:bg-slate-700' : 'bg-slate-100 border-slate-300 hover:bg-slate-200'}`} title="Toggle Theme">
+                                    <button onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} className={`cursor-pointer px-3 py-2 rounded-lg text-lg transition border ${isDark ? 'bg-slate-800 border-slate-700 hover:bg-slate-700' : 'bg-slate-100 border-slate-300 hover:bg-slate-200'}`} title="Toggle Theme">
                                         {isDark ? '☀️' : '🌙'}
                                     </button>
                                 </div>
                             </div>
 
-                            {/* LIVE DOCTOR ONLINE STATUS BAR */}
                             <div className={`pt-2 border-t flex flex-wrap items-center gap-2 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
                                 <span className={`text-[10px] sm:text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                                     <span className={`w-2 h-2 rounded-full ${onlineDoctors.length > 0 ? 'bg-emerald-500 animate-ping' : 'bg-slate-400'}`}></span>
@@ -911,9 +871,8 @@
                         </div>
                     </header>
 
-                    {/* INTERACTIVE NOTIFICATION BAR */}
                     {notifications.length > 0 && (
-                        <div onClick={() => setShowActivityLog(true)} className={`border-b px-4 py-2.5 shadow-sm cursor-pointer transition flex items-center justify-between group relative z-10 ${isDark ? 'bg-slate-800 border-slate-700 hover:bg-slate-700' : 'bg-white border-slate-200 hover:bg-slate-50'}`}>
+                        <div onClick={() => setShowActivityLog(true)} className={`border-b px-4 py-2.5 shadow-sm cursor-pointer transition flex items-center justify-between group ${isDark ? 'bg-slate-800 border-slate-700 hover:bg-slate-700' : 'bg-white border-slate-200 hover:bg-slate-50'}`}>
                             <div className="max-w-[1400px] mx-auto flex items-center gap-3 overflow-hidden flex-1 pointer-events-none">
                                 <span className={`px-2 py-0.5 rounded text-[10px] sm:text-xs font-bold shrink-0 border ${isDark ? 'bg-blue-900/50 text-blue-400 border-blue-800' : 'bg-blue-100 text-blue-700 border-blue-200'}`}>Live Sync</span>
                                 <span className={`text-[10px] sm:text-xs truncate font-semibold ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{notifications[0].time} — {notifications[0].text}</span>
@@ -940,12 +899,11 @@
                                         </span>
                                     </div>
 
-                                    {/* GRID */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
                                         {wardPatients.map(patient => {
                                             const needsWCs = patient.needsWoundCare !== false;
-
                                             let finalCardClass = `${cardBgClass} border rounded-2xl p-4 sm:p-5 shadow-sm space-y-4 transition-all duration-700 `;
+                                            
                                             if (highlightedPatient === patient.id) {
                                                 finalCardClass = `bg-blue-50 border rounded-2xl p-4 sm:p-5 ring-4 ring-blue-500 shadow-blue-500/50 scale-[1.02] border-blue-500 space-y-4 transition-all duration-700`;
                                             } else if (patient.isDischarged) {
@@ -1240,7 +1198,7 @@
                                                                     <div className={`${isDark ? 'text-amber-400' : 'text-amber-600'} font-mono`}>{patient.urineOutputHistory[0].volume}</div>
                                                                     <div className={`text-[8px] sm:text-[9px] font-normal pt-1 flex justify-between ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                                                                         <span>{patient.urineOutputHistory[0].timestamp}</span>
-                                                                        <span>{patient.urineOutputHistory[0].loggedBy.split(' ')[0]}</span>
+                                                                        <span>{(patient.urineOutputHistory[0].loggedBy || 'Unknown').split(' ')[0]}</span>
                                                                     </div>
                                                                 </div>
                                                             ) : (
@@ -1265,7 +1223,7 @@
                                                                     <div className={`${isDark ? 'text-rose-400' : 'text-rose-600'} font-mono`}>{patient.jpDrainHistory[0].volume}</div>
                                                                     <div className={`text-[8px] sm:text-[9px] font-normal pt-1 flex justify-between ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                                                                         <span>{patient.jpDrainHistory[0].timestamp}</span>
-                                                                        <span>{patient.jpDrainHistory[0].loggedBy.split(' ')[0]}</span>
+                                                                        <span>{(patient.jpDrainHistory[0].loggedBy || 'Unknown').split(' ')[0]}</span>
                                                                     </div>
                                                                 </div>
                                                             ) : (
@@ -1292,9 +1250,193 @@
                                                         </div>
                                                         
                                                         {patient.physicianOrders && patient.physicianOrders.length > 0 ? (
-                                                            <div className={`p-3 rounded-xl border text-[10px] sm:text-xs shadow-sm uppercase ${isDark ? (DOCTOR_COLORS_DARK[patient.physicianOrders[0].doctorName.replace(' ✔️', '')] || 'bg-slate-800 border-slate-700 text-slate-300') : (DOCTOR_COLORS[patient.physicianOrders[0].doctorName.replace(' ✔️', '')] || 'bg-slate-50 border-slate-200 text-slate-800')}`}>
-                                                                <div className="flex justify-between font-bold mb-1 border-b border-black/10 pb-1 items-center">
-                                                                    <span className="flex items-center">{patient.physicianOrders[0].doctorName.replace(' ✔️', '')} <VerifiedBlueTick /></span>
-                                                                    <span className="opacity-75 text-[9px] sm:text-[10px]">{patient.physicianOrders[0].date}</span>
-                                                                </div>
-                                                                {patient.physicianOrders
+                                                            (() => {
+                                                                const docNameStr = patient.physicianOrders[0].doctorName || 'Unknown';
+                                                                const docClean = docNameStr.replace(' ✔️', '');
+                                                                const doctorColorClass = isDark ? (DOCTOR_COLORS_DARK[docClean] || 'bg-slate-800 border-slate-700 text-slate-300') : (DOCTOR_COLORS[docClean] || 'bg-slate-50 border-slate-200 text-slate-800');
+                                                                
+                                                                return (
+                                                                    <div className={`p-3 rounded-xl border text-[10px] sm:text-xs shadow-sm uppercase ${doctorColorClass}`}>
+                                                                        <div className="flex justify-between font-bold mb-1 border-b border-black/10 pb-1 items-center">
+                                                                            <span className="flex items-center">{docClean} <VerifiedBlueTick /></span>
+                                                                            <span className="opacity-75 text-[9px] sm:text-[10px]">{patient.physicianOrders[0].date}</span>
+                                                                        </div>
+                                                                        {patient.physicianOrders[0].findings && <p className="mb-0.5"><strong className="opacity-75">Findings:</strong> {patient.physicianOrders[0].findings}</p>}
+                                                                        {patient.physicianOrders[0].orders && <p><strong className="opacity-75">Orders/Labs:</strong> {patient.physicianOrders[0].orders}</p>}
+                                                                    </div>
+                                                                );
+                                                            })()
+                                                        ) : (
+                                                            <div className={`text-[10px] sm:text-xs italic uppercase p-2.5 rounded-lg border text-center ${isDark ? 'bg-slate-800 text-slate-500 border-slate-700' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>No physician orders written yet.</div>
+                                                        )}
+                                                    </div>
+
+                                                    <div className={`space-y-2 border-t pt-3 ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+                                                        <label className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider">Update Location:</label>
+                                                        <div className="grid grid-cols-3 gap-1">
+                                                            {["Pre-Op", "Post-Op", "In OR", "X-Ray", "UTZ", "CT Scan"].map(loc => {
+                                                                const isActive = patient.location === loc && !patient.isDischarged;
+                                                                let btnClass = isActive 
+                                                                    ? (isDark ? 'bg-blue-600 text-white border-blue-500' : 'bg-slate-800 text-white border-slate-800')
+                                                                    : (isDark ? 'bg-slate-800 text-slate-400 hover:bg-slate-700 border-slate-700' : 'bg-white text-slate-600 hover:bg-slate-100 border-slate-300');
+                                                                return (
+                                                                    <button key={loc} onClick={() => toggleLocation(patient.id, loc)} className={`cursor-pointer py-1.5 px-1 rounded-lg text-[9px] sm:text-[10px] font-bold uppercase transition shadow-sm border hover:opacity-90 ${btnClass}`}>
+                                                                        {loc}
+                                                                    </button>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                        <div className="flex gap-2 mt-1.5">
+                                                            <button onClick={() => toggleDischarge(patient.id)} className={`cursor-pointer flex-1 py-2 px-2 rounded-lg text-[10px] sm:text-[11px] font-bold uppercase transition shadow-sm border ${patient.isDischarged ? (isDark ? 'bg-amber-900/30 text-amber-400 border-amber-800 hover:bg-amber-900/50' : 'bg-amber-100 text-amber-700 border-amber-300 hover:bg-amber-200') : (isDark ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 border-slate-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border-slate-300')}`}>
+                                                                {patient.isDischarged ? '↩️ Undo MGH' : '🏥 Mark Discharged (MGH)'}
+                                                            </button>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className={`flex items-center justify-between px-3 py-2 rounded-xl border text-[10px] sm:text-xs mt-2 uppercase ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                                                        <span className={`font-medium ${textMutedClass}`}>👤 {patient.watcherName}</span>
+                                                        <div className="flex items-center gap-2">
+                                                            <a href={`tel:${patient.watcherPhone}`} className={`${isDark ? 'text-emerald-400' : 'text-emerald-600'} font-mono font-bold hover:underline`}>📞 {patient.watcherPhone}</a>
+                                                            <button onClick={() => editWatcher(patient.id)} className="cursor-pointer text-blue-500 hover:text-blue-400 font-bold">✏️</button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </section>
+                            );
+                        })}
+                    </main>
+
+                    {/* ========================================== */}
+                    {/* ALL MODALS PLACED OUTSIDE MAIN FOR PROPER Z-INDEX CLICKING */}
+                    {/* ========================================== */}
+                    
+                    {vitalsFreqPrompt && (
+                        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+                            <div className={`${modalBgClass} rounded-3xl max-w-sm w-full p-6 space-y-4 text-center`}>
+                                <h2 className={`text-lg font-black uppercase ${textMainClass}`}>Select Monitoring Frequency</h2>
+                                <p className={`text-xs font-medium ${textMutedClass}`}>For {vitalsFreqPrompt.name}</p>
+                                <div className="grid grid-cols-2 gap-3 pt-2">
+                                    {VITALS_FREQ_OPTIONS.map(freq => (
+                                        <button 
+                                            key={freq} 
+                                            onClick={() => {
+                                                setVitalsModal({ ...vitalsFreqPrompt, frequency: freq });
+                                                setVitalsFreqPrompt(null);
+                                            }}
+                                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition shadow-sm border border-blue-500 cursor-pointer"
+                                        >
+                                            {freq}
+                                        </button>
+                                    ))}
+                                </div>
+                                <button onClick={() => setVitalsFreqPrompt(null)} className="w-full mt-2 text-slate-400 hover:text-slate-200 font-bold text-xs uppercase pt-2 cursor-pointer">Cancel</button>
+                            </div>
+                        </div>
+                    )}
+                    
+                    {vitalsModal && (
+                        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+                            <div className={`${modalBgClass} rounded-3xl max-w-md w-full p-6 space-y-4 uppercase`}>
+                                <div className="flex justify-between items-center">
+                                    <h2 className={`text-lg font-bold ${textMainClass}`}>📊 LOG VITAL SIGNS</h2>
+                                    <button onClick={() => setVitalsModal(null)} className="cursor-pointer text-slate-400 hover:text-slate-200 font-bold">✕</button>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <p className={`text-xs font-medium ${textMutedClass}`}>{vitalsModal.name}</p>
+                                    <span className="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded border border-blue-300">{vitalsModal.frequency}</span>
+                                </div>
+                                <form onSubmit={saveVitals} className="space-y-4">
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className={`text-xs font-bold mb-1 block ${textMutedClass}`}>BP (mmHg)</label>
+                                            <input name="bp" type="text" placeholder="120/80" className={`w-full rounded-xl px-3 py-2.5 text-sm uppercase font-medium focus:outline-none focus:ring-1 focus:ring-blue-500 ${inputBgClass}`} />
+                                        </div>
+                                        <div>
+                                            <label className={`text-xs font-bold mb-1 block ${textMutedClass}`}>HR (bpm)</label>
+                                            <input name="hr" type="text" placeholder="80" className={`w-full rounded-xl px-3 py-2.5 text-sm uppercase font-medium focus:outline-none focus:ring-1 focus:ring-blue-500 ${inputBgClass}`} />
+                                        </div>
+                                        <div>
+                                            <label className={`text-xs font-bold mb-1 block ${textMutedClass}`}>RR (cpm)</label>
+                                            <input name="rr" type="text" placeholder="20" className={`w-full rounded-xl px-3 py-2.5 text-sm uppercase font-medium focus:outline-none focus:ring-1 focus:ring-blue-500 ${inputBgClass}`} />
+                                        </div>
+                                        <div>
+                                            <label className={`text-xs font-bold mb-1 block ${textMutedClass}`}>Temp (°C)</label>
+                                            <input name="temp" type="text" placeholder="36.5" className={`w-full rounded-xl px-3 py-2.5 text-sm uppercase font-medium focus:outline-none focus:ring-1 focus:ring-blue-500 ${inputBgClass}`} />
+                                        </div>
+                                        <div className="col-span-2">
+                                            <label className={`text-xs font-bold mb-1 block ${textMutedClass}`}>SpO2 (%)</label>
+                                            <input name="spo2" type="text" placeholder="98" className={`w-full rounded-xl px-3 py-2.5 text-sm uppercase font-medium focus:outline-none focus:ring-1 focus:ring-blue-500 ${inputBgClass}`} />
+                                        </div>
+                                    </div>
+                                    <div className="pt-2 flex gap-3">
+                                        <button type="button" onClick={() => setVitalsModal(null)} className={`cursor-pointer flex-1 py-3 rounded-xl font-bold text-sm transition ${isDark ? 'bg-slate-700 text-white hover:bg-slate-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>CANCEL</button>
+                                        <button type="submit" className="cursor-pointer flex-1 py-3 rounded-xl font-bold text-sm bg-blue-600 text-white hover:bg-blue-700 transition shadow-sm">SAVE VITALS</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+                    
+                    {viewVitalsModal && (
+                        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+                            <div className={`${modalBgClass} rounded-3xl max-w-xl w-full max-h-[85vh] flex flex-col overflow-hidden uppercase`}>
+                                <div className="p-5 border-b border-slate-700 flex justify-between items-center bg-slate-900 text-white">
+                                    <div>
+                                        <h2 className="text-lg font-bold">📊 COMPLETE VITALS LOG</h2>
+                                        <p className="text-xs text-slate-400">{viewVitalsModal.name} • {viewVitalsModal.ward}</p>
+                                    </div>
+                                    <button onClick={() => setViewVitalsModal(null)} className="cursor-pointer text-slate-400 hover:text-white font-bold text-xl px-2">✕</button>
+                                </div>
+                                <div className="p-6 overflow-y-auto flex-1 space-y-4">
+                                    {viewVitalsModal.vitalsHistory && viewVitalsModal.vitalsHistory.length > 0 ? viewVitalsModal.vitalsHistory.map(v => (
+                                        <div key={v.id} className={`p-4 rounded-2xl border text-xs space-y-3 shadow-sm ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+                                            <div className={`flex justify-between font-bold border-b pb-2 items-center ${isDark ? 'border-slate-700' : 'border-slate-100'}`}>
+                                                <div className="flex items-center gap-2">
+                                                    <span className={`px-2 py-0.5 rounded border ${isDark ? 'bg-blue-900/30 text-blue-400 border-blue-800' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>{v.dateStr} — {v.shift}</span>
+                                                    {v.frequency && <span className="bg-slate-200 text-slate-700 text-[9px] px-1.5 py-0.5 rounded">{v.frequency}</span>}
+                                                </div>
+                                                <span className="text-slate-400 font-mono tracking-wider">{v.timestamp}</span>
+                                            </div>
+                                            <div className={`grid grid-cols-3 gap-3 font-medium text-sm pt-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                                                <div>BP: <strong className={textMainClass}>{v.bp}</strong></div>
+                                                <div>HR: <strong className={textMainClass}>{v.hr} BPM</strong></div>
+                                                <div>RR: <strong className={textMainClass}>{v.rr} CPM</strong></div>
+                                                <div>Temp: <strong className={textMainClass}>{v.temp}°C</strong></div>
+                                                <div>SpO2: <strong className={isDark ? 'text-blue-400' : 'text-blue-700'}>{v.spo2 || 'N/A'}%</strong></div>
+                                            </div>
+                                            <div className={`text-[10px] text-right pt-2 font-bold ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>LOGGED BY: {v.loggedBy || 'Unknown'}</div>
+                                        </div>
+                                    )) : <div className="text-center text-slate-500 py-4">No Vitals Logs Available</div>}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    
+                    {uploadLabModal && (
+                        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+                            <div className={`${modalBgClass} rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 uppercase`}>
+                                <div className="flex justify-between items-center">
+                                    <h2 className={`text-lg font-bold ${textMainClass}`}>🩻 UPLOAD X-RAY / LAB RESULTS</h2>
+                                    <button onClick={() => setUploadLabModal(null)} className="cursor-pointer text-slate-400 hover:text-slate-200 font-bold">✕</button>
+                                </div>
+                                <p className={`text-xs font-medium ${textMutedClass}`}>Attach clear screenshots or photos of labs and imaging. Max 6 files.</p>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {uploadLabModal.images.map((img, idx) => (
+                                        <div key={idx} className="relative group aspect-square">
+                                            <img src={img} className="w-full h-full object-cover rounded-lg border border-slate-300 shadow-sm" />
+                                            <button onClick={() => setUploadLabModal(prev => ({...prev, images: prev.images.filter((_, i) => i !== idx)}))} className="cursor-pointer absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs shadow-md border-2 border-white font-bold">✕</button>
+                                        </div>
+                                    ))}
+                                    {uploadLabModal.images.length < 6 && (
+                                        <label className={`border-2 border-dashed rounded-lg flex flex-col items-center justify-center transition cursor-pointer aspect-square ${isDark ? 'border-slate-600 bg-slate-800 text-slate-500 hover:border-teal-500 hover:text-teal-400' : 'border-slate-300 bg-slate-50 text-slate-400 hover:border-teal-400 hover:text-teal-600'}`}>
+                                            <span className="text-2xl font-bold">+</span>
+                                            <span className="text-[10px] font-bold mt-1">ADD IMAGE</span>
+                                            <input type="file" multiple accept="image/*" className="hidden" onChange={(e) => handleImageSelect(e, uploadLabModal, setUploadLabModal)} />
+                                        </label>
+                                    )}
+                                </div>
+                                <div className="pt-4 flex gap-3">
+                                    <button onClick={() => setUploadLabModal(
