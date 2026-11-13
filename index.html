@@ -17,6 +17,11 @@
     <div id="root"></div>
 
     <script type="text/babel">
+        // ==========================================
+        // 🔑 REQUIRED: YOUR GEMINI API KEY
+        // ==========================================
+        const GEMINI_API_KEY = "PASTE_YOUR_GEMINI_API_KEY_HERE"; // Get this from Google AI Studio
+
         // 🔥 PRE-FILLED FIREBASE CONFIGURATION 🔥
         const firebaseConfig = {
             apiKey: "AIzaSyCXkkPVmaMSBvD1r4auODZiN2mFMhWDDMU",
@@ -42,11 +47,12 @@
 
         const { useState, useEffect, useRef } = React;
 
-        const CURRENT_VERSION = "v3.7.1";
+        const CURRENT_VERSION = "v3.9.0";
         const VERSION_LOG_NOTES = [
-            { category: "Click Bug Fixed", text: "Removed problematic overlapping styling layers that were blocking clicks on the Vitals, CBG, Output, and Order buttons." },
-            { category: "12-Hour Format strictly Enforced", text: "All Vitals, CBG, and Output logs strictly follow standard AM/PM time." },
-            { category: "Vitals Frequency Prompts Active", text: "The system now requires selecting a monitoring frequency before Vitals can be logged." }
+            { category: "AI Endorsement Parser", text: "Added a built-in Gemini AI pasteboard to the Add Patient screen. Paste a messy Viber endorsement, and the AI will automatically fill the admission form for you." },
+            { category: "Critical Click Fix", text: "Fixed the Z-Index header issue that was blocking clicks on the Add Patient and SOP buttons." },
+            { category: "Strict 12-Hour Format", text: "All Vitals, CBG, and Output logs strictly follow a standard 12-hour AM/PM format." },
+            { category: "Vitals Frequency Prompts", text: "The system now requires selecting a monitoring frequency before Vitals can be logged." }
         ];
 
         const WARD_LIST = [
@@ -199,6 +205,10 @@
             const [viewOutputModal, setViewOutputModal] = useState(null); 
             
             const [addPatientModal, setAddPatientModal] = useState(false);
+            
+            // State for Gemini AI Pasteboard
+            const [aiEndorsementText, setAiEndorsementText] = useState("");
+            const [isAiLoading, setIsAiLoading] = useState(false);
 
             useEffect(() => {
                 const body = document.getElementById('bodyRoot');
@@ -436,6 +446,74 @@
                 if (!p) return;
                 addNotification(`⚕️ ${activeUser} toggled Wound Care status for ${p.name}.`, id);
                 syncPatients(prev => prev.map(pat => pat.id === id ? { ...pat, needsWoundCare: !(p.needsWoundCare !== false) } : pat));
+            };
+
+            // ==========================================
+            // GEMINI AI EXTRACTOR (PASTEBOARD LOGIC)
+            // ==========================================
+            const handleAiExtraction = async () => {
+                if (!aiEndorsementText.trim()) return alert("Please paste an endorsement first.");
+                if (GEMINI_API_KEY === "PASTE_YOUR_GEMINI_API_KEY_HERE" || !GEMINI_API_KEY) {
+                    return alert("🚨 ERROR: Gemini API Key is missing. Please add your key at the top of the HTML file.");
+                }
+
+                setIsAiLoading(true);
+                try {
+                    const prompt = `
+                    You are a strict medical data extraction assistant for Pasay City General Hospital. 
+                    Extract the patient details from the following raw endorsement text.
+                    Return ONLY a raw JSON object (no markdown, no backticks, no extra text) with these EXACT keys and format:
+                    {
+                      "name": "LASTNAME, FIRSTNAME (AGE/SEX) - MUST BE FULLY UPPERCASE",
+                      "ward": "Guess from context: FEMALE SURGERY WARD, MALE SURGERY WARD, IM WARD, ISOLATION SURGERY WARD, PEDIATRICS SX WARD",
+                      "dx": "The exact diagnosis, FULLY UPPERCASE",
+                      "monitor": "VSQ4 (default unless specified)",
+                      "cod": "Wound care instructions. If diabetic/gangrene put 'WET-TO-DRY WITH DAKIN'S SOLUTION OD'. Otherwise 'DRY WITH BETADINE OD'"
+                    }
+                    Endorsement text to parse: "${aiEndorsementText}"
+                    `;
+
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                    });
+
+                    const data = await response.json();
+                    let aiResultText = data.candidates[0].content.parts[0].text.trim();
+                    
+                    // Strip markdown if AI stubbornly adds it
+                    if (aiResultText.startsWith('```json')) {
+                        aiResultText = aiResultText.replace(/```json\n?/, '').replace(/```$/, '');
+                    }
+
+                    const extractedData = JSON.parse(aiResultText);
+
+                    // Auto-fill the form fields by setting element values directly
+                    const form = document.getElementById('addPatientForm');
+                    if (form && extractedData) {
+                        form.patientName.value = extractedData.name || "";
+                        if (extractedData.ward && WARD_LIST.includes(extractedData.ward.toUpperCase())) {
+                            form.patientWard.value = extractedData.ward.toUpperCase();
+                        }
+                        form.patientDx.value = extractedData.dx || "";
+                        if(extractedData.monitor) form.patientMonitor.value = extractedData.monitor;
+                        
+                        // Select Custom COD to dump the AI's string into
+                        form.codProtocol.value = 'CUSTOM';
+                        document.getElementById('addCustomCodBox').style.display = 'block';
+                        form.customCod.value = extractedData.cod || "";
+                        
+                        // Clear the pasteboard and reset
+                        setAiEndorsementText("");
+                        alert(`✅ AI Extraction Successful! Form auto-filled for: ${extractedData.name}`);
+                    }
+                } catch (error) {
+                    console.error("AI Extraction Error:", error);
+                    alert("Failed to parse the endorsement. The text might be too garbled, or the API key is invalid.");
+                } finally {
+                    setIsAiLoading(false);
+                }
             };
 
             const handleAddPatientSubmit = (e) => {
@@ -681,7 +759,7 @@
             // ==========================================
             if (!isAuthenticated) {
                 return (
-                    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4" style={{backgroundImage: 'url("https://www.transparenttextures.com/patterns/cubes.png")'}}>
+                    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4" style={{backgroundImage: 'url("[https://www.transparenttextures.com/patterns/cubes.png](https://www.transparenttextures.com/patterns/cubes.png)")'}}>
                         <div className="max-w-md w-full bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden">
                             <div className="bg-slate-900 p-8 text-center space-y-3">
                                 <div className="mx-auto bg-emerald-500 w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg">
@@ -756,7 +834,9 @@
             // ==========================================
             return (
                 <div className={`min-h-screen pb-16 ${isDark ? 'bg-slate-900 text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
-                    <header className={`sticky top-0 z-50 px-4 py-3 shadow-sm border-b ${headerBgClass} transition-colors duration-500`}>
+                    
+                    {/* CRITICAL Z-INDEX FIX: header is set to z-[9000] and explicitly allows pointer events to pass to children */}
+                    <header className={`sticky top-0 z-[9000] px-4 py-3 shadow-sm border-b ${headerBgClass} transition-colors duration-500`}>
                         <div className="max-w-[1400px] mx-auto flex flex-col gap-3">
                             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                                 <div className="flex items-center gap-3">
@@ -776,22 +856,23 @@
                                     </div>
                                 </div>
 
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <button onClick={() => setAddPatientModal(true)} className="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-2 rounded-lg text-xs font-bold shadow-sm transition flex items-center gap-1.5">
+                                {/* CRITICAL Z-INDEX FIX: The button container uses z-[9999] */}
+                                <div className="flex flex-wrap items-center gap-2 relative z-[9999]">
+                                    <button onClick={() => setAddPatientModal(true)} className="pointer-events-auto cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-2 rounded-lg text-xs font-bold shadow-sm transition flex items-center gap-1.5 relative z-[9999]">
                                         ➕ Add Patient
                                     </button>
                                     {userRole === 'doctor' && (
-                                        <button onClick={handleDailyReset} className={`cursor-pointer px-3.5 py-2 rounded-lg text-xs font-bold transition border ${isDark ? 'bg-red-900/30 text-red-400 border-red-800/50 hover:bg-red-900/50' : 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100'}`}>
+                                        <button onClick={handleDailyReset} className={`pointer-events-auto cursor-pointer px-3.5 py-2 rounded-lg text-xs font-bold transition border relative z-[9999] ${isDark ? 'bg-red-900/30 text-red-400 border-red-800/50 hover:bg-red-900/50' : 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100'}`}>
                                             🌅 Reset Ward
                                         </button>
                                     )}
-                                    <button onClick={() => setShowSops(true)} className={`cursor-pointer px-3.5 py-2 rounded-lg text-xs font-bold transition border ${isDark ? 'bg-amber-900/30 text-amber-400 border-amber-800/50 hover:bg-amber-900/50' : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'}`}>
+                                    <button onClick={() => setShowSops(true)} className={`pointer-events-auto cursor-pointer px-3.5 py-2 rounded-lg text-xs font-bold transition border relative z-[9999] ${isDark ? 'bg-amber-900/30 text-amber-400 border-amber-800/50 hover:bg-amber-900/50' : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'}`}>
                                         📋 SOPs & Rules
                                     </button>
-                                    <button onClick={handleLogout} className={`cursor-pointer px-3.5 py-2 rounded-lg text-xs font-bold transition border ${isDark ? 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700' : 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200'}`}>
+                                    <button onClick={handleLogout} className={`pointer-events-auto cursor-pointer px-3.5 py-2 rounded-lg text-xs font-bold transition border relative z-[9999] ${isDark ? 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700' : 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200'}`}>
                                         Sign Out
                                     </button>
-                                    <button onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} className={`cursor-pointer px-3 py-2 rounded-lg text-lg transition border ${isDark ? 'bg-slate-800 border-slate-700 hover:bg-slate-700' : 'bg-slate-100 border-slate-300 hover:bg-slate-200'}`} title="Toggle Theme">
+                                    <button onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} className={`pointer-events-auto cursor-pointer px-3 py-2 rounded-lg text-lg transition border relative z-[9999] ${isDark ? 'bg-slate-800 border-slate-700 hover:bg-slate-700' : 'bg-slate-100 border-slate-300 hover:bg-slate-200'}`} title="Toggle Theme">
                                         {isDark ? '☀️' : '🌙'}
                                     </button>
                                 </div>
@@ -822,7 +903,7 @@
 
                     {/* INTERACTIVE NOTIFICATION BAR */}
                     {notifications.length > 0 && (
-                        <div onClick={() => setShowActivityLog(true)} className={`border-b px-4 py-2.5 shadow-sm cursor-pointer transition flex items-center justify-between group ${isDark ? 'bg-slate-800 border-slate-700 hover:bg-slate-700' : 'bg-white border-slate-200 hover:bg-slate-50'}`}>
+                        <div onClick={() => setShowActivityLog(true)} className={`border-b px-4 py-2.5 shadow-sm cursor-pointer transition flex items-center justify-between group relative z-10 ${isDark ? 'bg-slate-800 border-slate-700 hover:bg-slate-700' : 'bg-white border-slate-200 hover:bg-slate-50'}`}>
                             <div className="max-w-[1400px] mx-auto flex items-center gap-3 overflow-hidden flex-1 pointer-events-none">
                                 <span className={`px-2 py-0.5 rounded text-[10px] sm:text-xs font-bold shrink-0 border ${isDark ? 'bg-blue-900/50 text-blue-400 border-blue-800' : 'bg-blue-100 text-blue-700 border-blue-200'}`}>Live Sync</span>
                                 <span className={`text-[10px] sm:text-xs truncate font-semibold ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{notifications[0].time} — {notifications[0].text}</span>
@@ -833,6 +914,7 @@
                         </div>
                     )}
 
+                    {/* MAIN PATIENT GRID CONTAINER (z-index block removed entirely) */}
                     <main className="max-w-[1400px] mx-auto px-2 sm:px-4 py-6 space-y-8">
                         {WARD_LIST.map(wardName => {
                             const wardPatients = patients.filter(p => p && p.ward === wardName);
@@ -849,14 +931,15 @@
                                         </span>
                                     </div>
 
-                                    {/* RESPONSIVE GRID */}
+                                    {/* GRID (isolate and z-index removed) */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
                                         {wardPatients.map(patient => {
                                             const needsWCs = patient.needsWoundCare !== false;
 
+                                            // Removed `isolate` and `relative` from finalCardClass to free up clicks
                                             let finalCardClass = `${cardBgClass} border rounded-2xl p-4 sm:p-5 shadow-sm space-y-4 transition-all duration-700 `;
                                             if (highlightedPatient === patient.id) {
-                                                finalCardClass = `bg-blue-50 border rounded-2xl p-4 sm:p-5 ring-4 ring-blue-500 shadow-blue-500/50 scale-[1.02] border-blue-500 relative space-y-4 transition-all duration-700`;
+                                                finalCardClass = `bg-blue-50 border rounded-2xl p-4 sm:p-5 ring-4 ring-blue-500 shadow-blue-500/50 scale-[1.02] border-blue-500 space-y-4 transition-all duration-700`;
                                             } else if (patient.isDischarged) {
                                                 finalCardClass += isDark ? 'opacity-50 grayscale' : 'opacity-80 bg-slate-100 border-slate-300';
                                             } else if (patient.isPostAmputation) {
@@ -1045,7 +1128,6 @@
                                                         )}
                                                     </div>
 
-                                                    {/* NEW FEATURE: DIAGNOSTICS & LABS GALLERY VIEWER */}
                                                     <div className={`p-3 rounded-xl border space-y-2 ${subPanelClass}`}>
                                                         <div className="flex justify-between items-center">
                                                             <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wider ${textMutedClass}`}>🩻 Diagnostics, X-Ray & Labs</span>
@@ -1253,10 +1335,12 @@
                         })}
                     </main>
 
-                    {/* === MODALS === */}
+                    {/* ========================================== */}
+                    {/* ALL MODALS PLACED OUTSIDE MAIN FOR PROPER Z-INDEX CLICKING */}
+                    {/* ========================================== */}
                     
                     {vitalsFreqPrompt && (
-                        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
+                        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
                             <div className={`${modalBgClass} rounded-3xl max-w-sm w-full p-6 space-y-4 text-center`}>
                                 <h2 className={`text-lg font-black uppercase ${textMainClass}`}>Select Monitoring Frequency</h2>
                                 <p className={`text-xs font-medium ${textMutedClass}`}>For {vitalsFreqPrompt.name}</p>
@@ -1268,23 +1352,23 @@
                                                 setVitalsModal({ ...vitalsFreqPrompt, frequency: freq });
                                                 setVitalsFreqPrompt(null);
                                             }}
-                                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition shadow-sm border border-blue-500"
+                                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition shadow-sm border border-blue-500 cursor-pointer"
                                         >
                                             {freq}
                                         </button>
                                     ))}
                                 </div>
-                                <button onClick={() => setVitalsFreqPrompt(null)} className="w-full mt-2 text-slate-400 hover:text-slate-200 font-bold text-xs uppercase pt-2">Cancel</button>
+                                <button onClick={() => setVitalsFreqPrompt(null)} className="w-full mt-2 text-slate-400 hover:text-slate-200 font-bold text-xs uppercase pt-2 cursor-pointer">Cancel</button>
                             </div>
                         </div>
                     )}
                     
                     {vitalsModal && (
-                        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
                             <div className={`${modalBgClass} rounded-3xl max-w-md w-full p-6 space-y-4 uppercase`}>
                                 <div className="flex justify-between items-center">
                                     <h2 className={`text-lg font-bold ${textMainClass}`}>📊 LOG VITAL SIGNS</h2>
-                                    <button onClick={() => setVitalsModal(null)} className="text-slate-400 hover:text-slate-200 font-bold">✕</button>
+                                    <button onClick={() => setVitalsModal(null)} className="cursor-pointer text-slate-400 hover:text-slate-200 font-bold">✕</button>
                                 </div>
                                 <div className="flex justify-between items-center">
                                     <p className={`text-xs font-medium ${textMutedClass}`}>{vitalsModal.name}</p>
@@ -1314,8 +1398,8 @@
                                         </div>
                                     </div>
                                     <div className="pt-2 flex gap-3">
-                                        <button type="button" onClick={() => setVitalsModal(null)} className={`flex-1 py-3 rounded-xl font-bold text-sm transition ${isDark ? 'bg-slate-700 text-white hover:bg-slate-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>CANCEL</button>
-                                        <button type="submit" className="flex-1 py-3 rounded-xl font-bold text-sm bg-blue-600 text-white hover:bg-blue-700 transition shadow-sm">SAVE VITALS</button>
+                                        <button type="button" onClick={() => setVitalsModal(null)} className={`cursor-pointer flex-1 py-3 rounded-xl font-bold text-sm transition ${isDark ? 'bg-slate-700 text-white hover:bg-slate-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>CANCEL</button>
+                                        <button type="submit" className="cursor-pointer flex-1 py-3 rounded-xl font-bold text-sm bg-blue-600 text-white hover:bg-blue-700 transition shadow-sm">SAVE VITALS</button>
                                     </div>
                                 </form>
                             </div>
@@ -1323,14 +1407,14 @@
                     )}
                     
                     {viewVitalsModal && (
-                        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
                             <div className={`${modalBgClass} rounded-3xl max-w-xl w-full max-h-[85vh] flex flex-col overflow-hidden uppercase`}>
                                 <div className="p-5 border-b border-slate-700 flex justify-between items-center bg-slate-900 text-white">
                                     <div>
                                         <h2 className="text-lg font-bold">📊 COMPLETE VITALS LOG</h2>
                                         <p className="text-xs text-slate-400">{viewVitalsModal.name} • {viewVitalsModal.ward}</p>
                                     </div>
-                                    <button onClick={() => setViewVitalsModal(null)} className="text-slate-400 hover:text-white font-bold text-xl px-2">✕</button>
+                                    <button onClick={() => setViewVitalsModal(null)} className="cursor-pointer text-slate-400 hover:text-white font-bold text-xl px-2">✕</button>
                                 </div>
                                 <div className="p-6 overflow-y-auto flex-1 space-y-4">
                                     {viewVitalsModal.vitalsHistory && viewVitalsModal.vitalsHistory.length > 0 ? viewVitalsModal.vitalsHistory.map(v => (
@@ -1357,20 +1441,19 @@
                         </div>
                     )}
                     
-                    {/* LAB & X-RAY UPLOADER MODAL (NEW) */}
                     {uploadLabModal && (
-                        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
                             <div className={`${modalBgClass} rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 uppercase`}>
                                 <div className="flex justify-between items-center">
                                     <h2 className={`text-lg font-bold ${textMainClass}`}>🩻 UPLOAD X-RAY / LAB RESULTS</h2>
-                                    <button onClick={() => setUploadLabModal(null)} className="text-slate-400 hover:text-slate-200 font-bold">✕</button>
+                                    <button onClick={() => setUploadLabModal(null)} className="cursor-pointer text-slate-400 hover:text-slate-200 font-bold">✕</button>
                                 </div>
                                 <p className={`text-xs font-medium ${textMutedClass}`}>Attach clear screenshots or photos of labs and imaging. Max 6 files.</p>
                                 <div className="grid grid-cols-3 gap-2">
                                     {uploadLabModal.images.map((img, idx) => (
                                         <div key={idx} className="relative group aspect-square">
                                             <img src={img} className="w-full h-full object-cover rounded-lg border border-slate-300 shadow-sm" />
-                                            <button onClick={() => setUploadLabModal(prev => ({...prev, images: prev.images.filter((_, i) => i !== idx)}))} className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs shadow-md border-2 border-white font-bold">✕</button>
+                                            <button onClick={() => setUploadLabModal(prev => ({...prev, images: prev.images.filter((_, i) => i !== idx)}))} className="cursor-pointer absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs shadow-md border-2 border-white font-bold">✕</button>
                                         </div>
                                     ))}
                                     {uploadLabModal.images.length < 6 && (
@@ -1382,26 +1465,26 @@
                                     )}
                                 </div>
                                 <div className="pt-4 flex gap-3">
-                                    <button onClick={() => setUploadLabModal(null)} className={`flex-1 py-3 rounded-xl font-bold text-sm transition ${isDark ? 'bg-slate-700 text-white hover:bg-slate-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>CANCEL</button>
-                                    <button onClick={submitLabProof} disabled={uploadLabModal.images.length === 0} className="flex-1 py-3 rounded-xl font-bold text-sm bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-50 transition shadow-sm">UPLOAD LABS</button>
+                                    <button onClick={() => setUploadLabModal(null)} className={`cursor-pointer flex-1 py-3 rounded-xl font-bold text-sm transition ${isDark ? 'bg-slate-700 text-white hover:bg-slate-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>CANCEL</button>
+                                    <button onClick={submitLabProof} disabled={uploadLabModal.images.length === 0} className="cursor-pointer flex-1 py-3 rounded-xl font-bold text-sm bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-50 transition shadow-sm">UPLOAD LABS</button>
                                 </div>
                             </div>
                         </div>
                     )}
 
                     {uploadCodModal && (
-                        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
                             <div className={`${modalBgClass} rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 uppercase`}>
                                 <div className="flex justify-between items-center">
                                     <h2 className={`text-lg font-bold ${textMainClass}`}>📸 UPLOAD COD PROOF</h2>
-                                    <button onClick={() => setUploadCodModal(null)} className="text-slate-400 hover:text-slate-200 font-bold">✕</button>
+                                    <button onClick={() => setUploadCodModal(null)} className="cursor-pointer text-slate-400 hover:text-slate-200 font-bold">✕</button>
                                 </div>
                                 <p className={`text-xs font-medium ${textMutedClass}`}>Add up to 6 images to prove Wound Care completion.</p>
                                 <div className="grid grid-cols-3 gap-2">
                                     {uploadCodModal.images.map((img, idx) => (
                                         <div key={idx} className="relative group aspect-square">
                                             <img src={img} className="w-full h-full object-cover rounded-lg border border-slate-300 shadow-sm" />
-                                            <button onClick={() => setUploadCodModal(prev => ({...prev, images: prev.images.filter((_, i) => i !== idx)}))} className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs shadow-md border-2 border-white font-bold">✕</button>
+                                            <button onClick={() => setUploadCodModal(prev => ({...prev, images: prev.images.filter((_, i) => i !== idx)}))} className="cursor-pointer absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs shadow-md border-2 border-white font-bold">✕</button>
                                         </div>
                                     ))}
                                     {uploadCodModal.images.length < 6 && (
@@ -1413,25 +1496,25 @@
                                     )}
                                 </div>
                                 <div className="pt-4 flex gap-3">
-                                    <button onClick={() => setUploadCodModal(null)} className={`flex-1 py-3 rounded-xl font-bold text-sm transition ${isDark ? 'bg-slate-700 text-white hover:bg-slate-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>CANCEL</button>
-                                    <button onClick={submitCodProof} disabled={uploadCodModal.images.length === 0} className="flex-1 py-3 rounded-xl font-bold text-sm bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 transition shadow-sm">SUBMIT PROOF</button>
+                                    <button onClick={() => setUploadCodModal(null)} className={`cursor-pointer flex-1 py-3 rounded-xl font-bold text-sm transition ${isDark ? 'bg-slate-700 text-white hover:bg-slate-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>CANCEL</button>
+                                    <button onClick={submitCodProof} disabled={uploadCodModal.images.length === 0} className="cursor-pointer flex-1 py-3 rounded-xl font-bold text-sm bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 transition shadow-sm">SUBMIT PROOF</button>
                                 </div>
                             </div>
                         </div>
                     )}
 
                     {viewImages && viewImages.length > 0 && (
-                        <div className="fixed inset-0 bg-slate-900/95 z-[120] flex flex-col items-center justify-center p-4 backdrop-blur-sm" onClick={(e) => { if(e.target === e.currentTarget) setViewImages(null); }}>
-                            <button onClick={() => setViewImages(null)} className="fixed top-6 right-6 text-white font-bold text-sm bg-slate-800 hover:bg-slate-700 px-5 py-2.5 rounded-full transition border border-slate-700 shadow-xl z-50">✕ CLOSE GALLERY</button>
+                        <div className="fixed inset-0 bg-slate-900/95 z-[9999] flex flex-col items-center justify-center p-4 backdrop-blur-sm" onClick={(e) => { if(e.target === e.currentTarget) setViewImages(null); }}>
+                            <button onClick={() => setViewImages(null)} className="cursor-pointer fixed top-6 right-6 text-white font-bold text-sm bg-slate-800 hover:bg-slate-700 px-5 py-2.5 rounded-full transition border border-slate-700 shadow-xl z-50">✕ CLOSE GALLERY</button>
                             <div className="max-w-4xl w-full flex flex-col items-center gap-6 mt-12">
                                 <img src={viewImages[currentImageIndex]} alt={`Image ${currentImageIndex+1}`} className="max-h-[75vh] w-auto rounded-xl shadow-2xl border-4 border-slate-200 object-contain" />
                                 {viewImages.length > 1 && (
                                     <div className="flex items-center gap-6 bg-slate-800/80 px-6 py-3 rounded-full border border-slate-700">
-                                        <button onClick={() => setCurrentImageIndex(i => Math.max(0, i - 1))} disabled={currentImageIndex === 0} className="bg-white/20 p-2 rounded-full text-white disabled:opacity-20 hover:bg-white/30 transition">
+                                        <button onClick={() => setCurrentImageIndex(i => Math.max(0, i - 1))} disabled={currentImageIndex === 0} className="cursor-pointer bg-white/20 p-2 rounded-full text-white disabled:opacity-20 hover:bg-white/30 transition">
                                             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M15 19l-7-7 7-7"/></svg>
                                         </button>
                                         <span className="text-white font-bold tracking-widest text-sm">{currentImageIndex + 1} / {viewImages.length}</span>
-                                        <button onClick={() => setCurrentImageIndex(i => Math.min(viewImages.length - 1, i + 1))} disabled={currentImageIndex === viewImages.length - 1} className="bg-white/20 p-2 rounded-full text-white disabled:opacity-20 hover:bg-white/30 transition">
+                                        <button onClick={() => setCurrentImageIndex(i => Math.min(viewImages.length - 1, i + 1))} disabled={currentImageIndex === viewImages.length - 1} className="cursor-pointer bg-white/20 p-2 rounded-full text-white disabled:opacity-20 hover:bg-white/30 transition">
                                             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7"/></svg>
                                         </button>
                                     </div>
@@ -1441,13 +1524,13 @@
                     )}
                     
                     {orderModal && (
-                        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
                             <div className={`${modalBgClass} rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 uppercase`}>
                                 <div className="flex justify-between items-center">
                                     <h2 className={`text-lg font-bold flex items-center gap-2 ${textMainClass}`}>
                                         {orderModal.editId ? "✏️ EDIT PHYSICIAN'S ORDER" : "🩺 WRITE PHYSICIAN'S ORDER"}
                                     </h2>
-                                    <button onClick={() => setOrderModal(null)} className="text-slate-400 hover:text-slate-200 font-bold">✕</button>
+                                    <button onClick={() => setOrderModal(null)} className="cursor-pointer text-slate-400 hover:text-slate-200 font-bold">✕</button>
                                 </div>
                                 <form onSubmit={savePhysicianOrder} className="space-y-4">
                                     <div>
@@ -1469,8 +1552,8 @@
                                         />
                                     </div>
                                     <div className="pt-2 flex gap-3">
-                                        <button type="button" onClick={() => setOrderModal(null)} className={`flex-1 py-3 rounded-xl font-bold text-sm transition ${isDark ? 'bg-slate-700 text-white hover:bg-slate-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>CANCEL</button>
-                                        <button type="submit" className="flex-1 py-3 rounded-xl font-bold text-sm bg-blue-600 text-white hover:bg-blue-700 transition shadow-sm">
+                                        <button type="button" onClick={() => setOrderModal(null)} className={`cursor-pointer flex-1 py-3 rounded-xl font-bold text-sm transition ${isDark ? 'bg-slate-700 text-white hover:bg-slate-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>CANCEL</button>
+                                        <button type="submit" className="cursor-pointer flex-1 py-3 rounded-xl font-bold text-sm bg-blue-600 text-white hover:bg-blue-700 transition shadow-sm">
                                             {orderModal.editId ? "UPDATE ORDER" : "SAVE ORDER"}
                                         </button>
                                     </div>
@@ -1480,14 +1563,14 @@
                     )}
 
                     {viewOrdersModal && (
-                        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
                             <div className={`${modalBgClass} rounded-3xl max-w-xl w-full max-h-[85vh] flex flex-col overflow-hidden uppercase`}>
                                 <div className="p-5 border-b border-slate-700 flex justify-between items-center bg-slate-900 text-white">
                                     <div>
                                         <h2 className="text-lg font-bold">🩺 ALL PHYSICIAN ORDERS</h2>
                                         <p className="text-xs text-slate-400">{viewOrdersModal.name} • {viewOrdersModal.ward}</p>
                                     </div>
-                                    <button onClick={() => setViewOrdersModal(null)} className="text-slate-400 hover:text-white font-bold text-xl px-2">✕</button>
+                                    <button onClick={() => setViewOrdersModal(null)} className="cursor-pointer text-slate-400 hover:text-white font-bold text-xl px-2">✕</button>
                                 </div>
                                 <div className="p-6 overflow-y-auto flex-1 space-y-4">
                                     {viewOrdersModal.physicianOrders && viewOrdersModal.physicianOrders.length > 0 ? viewOrdersModal.physicianOrders.map(order => (
@@ -1499,9 +1582,9 @@
                                                     {userRole === 'doctor' && order.doctorName.replace(' ✔️', '') === activeUser.replace(' ✔️', '') && (
                                                         <div className="flex gap-2">
                                                             {(!order.editCount || order.editCount < 5) && (
-                                                                <button onClick={() => { setOrderModal({ patientId: viewOrdersModal.id, findings: order.findings, orders: order.orders, editId: order.id }); setViewOrdersModal(null); }} className="bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1 rounded font-bold shadow-sm">EDIT</button>
+                                                                <button onClick={() => { setOrderModal({ patientId: viewOrdersModal.id, findings: order.findings, orders: order.orders, editId: order.id }); setViewOrdersModal(null); }} className="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1 rounded font-bold shadow-sm">EDIT</button>
                                                             )}
-                                                            <button onClick={() => deletePhysicianOrder(viewOrdersModal.id, order.id)} className="bg-red-600 hover:bg-red-700 text-white px-2.5 py-1 rounded font-bold shadow-sm">DELETE</button>
+                                                            <button onClick={() => deletePhysicianOrder(viewOrdersModal.id, order.id)} className="cursor-pointer bg-red-600 hover:bg-red-700 text-white px-2.5 py-1 rounded font-bold shadow-sm">DELETE</button>
                                                         </div>
                                                     )}
                                                 </div>
@@ -1516,14 +1599,14 @@
                     )}
 
                     {viewCbgModal && (
-                        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
                             <div className={`${modalBgClass} rounded-3xl max-w-xl w-full max-h-[85vh] flex flex-col overflow-hidden uppercase`}>
                                 <div className="p-5 border-b border-slate-700 flex justify-between items-center bg-slate-900 text-white">
                                     <div>
                                         <h2 className="text-lg font-bold">🩸 COMPLETE CBG LOG</h2>
                                         <p className="text-xs text-slate-400">{viewCbgModal.name} • {viewCbgModal.ward}</p>
                                     </div>
-                                    <button onClick={() => setViewCbgModal(null)} className="text-slate-400 hover:text-white font-bold text-xl px-2">✕</button>
+                                    <button onClick={() => setViewCbgModal(null)} className="cursor-pointer text-slate-400 hover:text-white font-bold text-xl px-2">✕</button>
                                 </div>
                                 <div className="p-6 overflow-y-auto flex-1 space-y-3">
                                     {viewCbgModal.cbgHistory && viewCbgModal.cbgHistory.length > 0 ? viewCbgModal.cbgHistory.map(c => (
@@ -1545,14 +1628,14 @@
                     )}
 
                     {viewOutputModal && (
-                        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
                             <div className={`${modalBgClass} rounded-3xl max-w-xl w-full max-h-[85vh] flex flex-col overflow-hidden uppercase`}>
                                 <div className="p-5 border-b border-slate-700 flex justify-between items-center bg-slate-900 text-white">
                                     <div>
                                         <h2 className="text-lg font-bold">{viewOutputModal.type === 'Urine' ? '💧 URINE OUTPUT LOG' : '🩸 JP DRAIN LOG'}</h2>
                                         <p className="text-xs text-slate-400">{viewOutputModal.patient.name} • {viewOutputModal.patient.ward}</p>
                                     </div>
-                                    <button onClick={() => setViewOutputModal(null)} className="text-slate-400 hover:text-white font-bold text-xl px-2">✕</button>
+                                    <button onClick={() => setViewOutputModal(null)} className="cursor-pointer text-slate-400 hover:text-white font-bold text-xl px-2">✕</button>
                                 </div>
                                 <div className="p-6 overflow-y-auto flex-1 space-y-3">
                                     {(() => {
@@ -1583,11 +1666,11 @@
                     )}
 
                     {cbgModal && (
-                        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
                             <div className={`${modalBgClass} rounded-3xl max-w-md w-full p-6 space-y-4 uppercase`}>
                                 <div className="flex justify-between items-center">
                                     <h2 className={`text-lg font-bold ${textMainClass}`}>🩸 LOG CBG</h2>
-                                    <button onClick={() => setCbgModal(null)} className="text-slate-400 hover:text-slate-200 font-bold">✕</button>
+                                    <button onClick={() => setCbgModal(null)} className="cursor-pointer text-slate-400 hover:text-slate-200 font-bold">✕</button>
                                 </div>
                                 <p className={`text-xs font-medium ${textMutedClass}`}>{cbgModal.name}</p>
                                 <form onSubmit={(e) => saveCbg(e, cbgModal.id)} className="space-y-4">
@@ -1602,8 +1685,8 @@
                                         </select>
                                     </div>
                                     <div className="pt-2 flex gap-3">
-                                        <button type="button" onClick={() => setCbgModal(null)} className={`flex-1 py-3 rounded-xl font-bold text-sm transition ${isDark ? 'bg-slate-700 text-white hover:bg-slate-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>CANCEL</button>
-                                        <button type="submit" className="flex-1 py-3 rounded-xl font-bold text-sm bg-blue-600 text-white hover:bg-blue-700 transition shadow-sm">SAVE CBG</button>
+                                        <button type="button" onClick={() => setCbgModal(null)} className={`cursor-pointer flex-1 py-3 rounded-xl font-bold text-sm transition ${isDark ? 'bg-slate-700 text-white hover:bg-slate-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>CANCEL</button>
+                                        <button type="submit" className="cursor-pointer flex-1 py-3 rounded-xl font-bold text-sm bg-blue-600 text-white hover:bg-blue-700 transition shadow-sm">SAVE CBG</button>
                                     </div>
                                 </form>
                             </div>
@@ -1611,11 +1694,11 @@
                     )}
 
                     {outputModal && (
-                        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
                             <div className={`${modalBgClass} rounded-3xl max-w-md w-full p-6 space-y-4 uppercase`}>
                                 <div className="flex justify-between items-center">
                                     <h2 className={`text-lg font-bold ${textMainClass}`}>{outputModal.type === 'Urine' ? '💧 LOG URINE OUTPUT' : '🩸 LOG JP DRAIN'}</h2>
-                                    <button onClick={() => setOutputModal(null)} className="text-slate-400 hover:text-slate-200 font-bold">✕</button>
+                                    <button onClick={() => setOutputModal(null)} className="cursor-pointer text-slate-400 hover:text-slate-200 font-bold">✕</button>
                                 </div>
                                 <p className={`text-xs font-medium ${textMutedClass}`}>{outputModal.name}</p>
                                 <form onSubmit={(e) => saveOutput(e, outputModal.patientId)} className="space-y-4">
@@ -1628,35 +1711,130 @@
                                         <input name="desc" type="text" placeholder="e.g. Amber yellow, Serosanguinous" className={`w-full rounded-xl px-3 py-2.5 text-sm uppercase font-medium focus:outline-none focus:ring-1 focus:ring-blue-500 ${inputBgClass}`} />
                                     </div>
                                     <div className="pt-2 flex gap-3">
-                                        <button type="button" onClick={() => setOutputModal(null)} className={`flex-1 py-3 rounded-xl font-bold text-sm transition ${isDark ? 'bg-slate-700 text-white hover:bg-slate-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>CANCEL</button>
-                                        <button type="submit" className="flex-1 py-3 rounded-xl font-bold text-sm bg-blue-600 text-white hover:bg-blue-700 transition shadow-sm">SAVE OUTPUT</button>
+                                        <button type="button" onClick={() => setOutputModal(null)} className={`cursor-pointer flex-1 py-3 rounded-xl font-bold text-sm transition ${isDark ? 'bg-slate-700 text-white hover:bg-slate-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>CANCEL</button>
+                                        <button type="submit" className="cursor-pointer flex-1 py-3 rounded-xl font-bold text-sm bg-blue-600 text-white hover:bg-blue-700 transition shadow-sm">SAVE OUTPUT</button>
                                     </div>
                                 </form>
                             </div>
                         </div>
                     )}
                     
-                    {/* ACTIVITY LOG MODAL */}
-                    {showActivityLog && (
-                        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
-                            <div className={`${modalBgClass} border rounded-2xl max-w-lg w-full max-h-[80vh] flex flex-col uppercase overflow-hidden`}>
-                                <div className={`p-4 border-b flex justify-between items-center ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
-                                    <h2 className={`text-lg font-bold ${textMainClass}`}>📋 ACTIVITY & UPDATE LOG</h2>
-                                    <button onClick={() => setShowActivityLog(false)} className="text-slate-400 hover:text-slate-200 font-bold px-2 text-lg">✕</button>
+                    {/* ADD PATIENT MODAL (WITH AI PASTEBOARD & Z-INDEX FIX) */}
+                    {addPatientModal && (
+                        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+                            <div className={`${modalBgClass} rounded-3xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto`}>
+                                <div className="flex justify-between items-center">
+                                    <h2 className={`text-lg font-bold uppercase flex items-center gap-2 ${textMainClass}`}>➕ ADMIT NEW PATIENT</h2>
+                                    <button onClick={() => setAddPatientModal(false)} className="cursor-pointer text-slate-400 hover:text-slate-200 font-bold">✕</button>
                                 </div>
-                                <div className="p-4 overflow-y-auto flex-1 space-y-3">
-                                    {notifications.map(n => (
-                                        <div key={n.id} onClick={() => jumpToPatient(n.patientId)} className={`p-3 rounded-lg border text-sm transition ${n.patientId ? (isDark ? 'bg-slate-800 border-slate-700 hover:border-blue-500 cursor-pointer' : 'bg-white border-slate-200 hover:border-blue-400 hover:shadow-md cursor-pointer') : (isDark ? 'bg-slate-900 border-slate-800 text-slate-400' : 'bg-slate-50 border-slate-100 text-slate-500')}`}>
-                                            <div className="text-xs text-slate-400 font-bold mb-1">{n.time}</div>
-                                            <div className={`font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{n.text}</div>
-                                            {n.patientId && <div className="text-xs text-blue-500 font-bold mt-2 flex items-center gap-1">JUMP TO PATIENT ➔</div>}
+                                
+                                {/* AI PASTEBOARD WIDGET */}
+                                <div className={`p-4 rounded-xl border border-blue-400 bg-blue-50 text-blue-900 space-y-2 ${isDark ? 'bg-blue-900/20 text-blue-200 border-blue-700' : ''}`}>
+                                    <h3 className="font-bold text-xs uppercase flex items-center gap-1.5"><span className="text-base">✨</span> Auto-Fill with Gemini AI</h3>
+                                    <textarea 
+                                        value={aiEndorsementText}
+                                        onChange={(e) => setAiEndorsementText(e.target.value)}
+                                        placeholder="Paste messy Viber endorsement text here..."
+                                        className={`w-full rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-blue-500 border ${isDark ? 'bg-blue-900/40 border-blue-700 text-blue-100 placeholder-blue-400/50' : 'bg-white border-blue-200 text-blue-900 placeholder-blue-300'}`}
+                                        rows="3"
+                                    ></textarea>
+                                    <button 
+                                        type="button" 
+                                        onClick={handleAiExtraction}
+                                        disabled={isAiLoading || !aiEndorsementText.trim()}
+                                        className={`cursor-pointer w-full py-2 rounded-lg font-bold text-xs transition uppercase ${isAiLoading ? 'bg-blue-400 cursor-wait' : 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm'}`}
+                                    >
+                                        {isAiLoading ? "Extracting Data..." : "Extract & Fill Form"}
+                                    </button>
+                                </div>
+                                
+                                <form id="addPatientForm" onSubmit={handleAddPatientSubmit} className="space-y-4 text-xs uppercase pt-2">
+                                    <div>
+                                        <label className={`font-bold mb-1 block ${textMutedClass}`}>Patient Name & Age/Gender</label>
+                                        <input name="patientName" required type="text" placeholder="e.g., DELA CRUZ, JUAN (45/M)" className={`w-full rounded-xl px-3 py-2.5 text-sm font-medium uppercase focus:outline-none focus:ring-1 focus:ring-blue-500 ${inputBgClass}`} />
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div>
+                                            <label className={`font-bold mb-1 block ${textMutedClass}`}>Assign Ward</label>
+                                            <select name="patientWard" onChange={(e) => {
+                                                const roomBox = document.getElementById('roomBox');
+                                                if (e.target.value.includes('ISOLATION') || e.target.value.includes('IM')) roomBox.style.display = 'block';
+                                                else roomBox.style.display = 'none';
+                                            }} className={`w-full rounded-xl px-3 py-2.5 text-xs font-medium uppercase focus:outline-none focus:ring-1 focus:ring-blue-500 ${inputBgClass}`}>
+                                                {WARD_LIST.map(w => <option key={w} value={w}>{w}</option>)}
+                                            </select>
                                         </div>
-                                    ))}
-                                    {notifications.length === 0 && <div className="text-center text-slate-400 text-sm py-4">No recent activity.</div>}
-                                </div>
+                                        <div id="roomBox" style={{display: 'none'}}>
+                                            <label className={`font-bold mb-1 block ${textMutedClass}`}>Room / Bed Number</label>
+                                            <input name="patientRoom" type="text" placeholder="e.g. MW-1" className={`w-full rounded-xl px-3 py-2.5 text-xs font-medium uppercase focus:outline-none focus:ring-1 focus:ring-blue-500 ${inputBgClass}`} />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className={`font-bold mb-1 block ${textMutedClass}`}>Diagnosis (DX)</label>
+                                        <input name="patientDx" required type="text" placeholder="e.g., ACUTE APPENDICITIS" className={`w-full rounded-xl px-3 py-2.5 text-sm font-medium uppercase focus:outline-none focus:ring-1 focus:ring-blue-500 ${inputBgClass}`} />
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div>
+                                            <label className={`font-bold mb-1 block ${textMutedClass}`}>Surgery (Optional)</label>
+                                            <input name="patientSurgery" type="text" placeholder="e.g., APPENDECTOMY" className={`w-full rounded-xl px-3 py-2.5 text-sm font-medium uppercase focus:outline-none focus:ring-1 focus:ring-blue-500 ${inputBgClass}`} />
+                                        </div>
+                                        <div>
+                                            <label className={`font-bold mb-1 block ${textMutedClass}`}>Monitor Schedule</label>
+                                            <input name="patientMonitor" type="text" defaultValue="VSQ4" className={`w-full rounded-xl px-3 py-2.5 text-sm font-medium uppercase focus:outline-none focus:ring-1 focus:ring-blue-500 ${inputBgClass}`} />
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div>
+                                            <label className={`font-bold mb-1 block ${textMutedClass}`}>Special Wound Care Instructions</label>
+                                            <select name="codProtocol" onChange={(e) => {
+                                                const customBox = document.getElementById('addCustomCodBox');
+                                                if(e.target.value === 'CUSTOM') customBox.style.display = 'block';
+                                                else customBox.style.display = 'none';
+                                            }} className={`w-full rounded-xl px-3 py-2.5 text-xs font-medium uppercase focus:outline-none focus:ring-1 focus:ring-blue-500 ${inputBgClass}`}>
+                                                <option value="WET-TO-DRY WITH DAKIN'S SOLUTION">Dakin's Solution</option>
+                                                <option value="DRY WITH BETADINE">Betadine OD</option>
+                                                <option value="WET-TO-DRY WITH THIRD'S SOLUTION">Third's Solution</option>
+                                                <option value="CUSTOM">Custom Free-Text</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className={`font-bold mb-1 block ${textMutedClass}`}>Timing Abbreviation</label>
+                                            <select name="codTiming" defaultValue="OD" className={`w-full rounded-xl px-3 py-2.5 text-xs font-medium uppercase focus:outline-none focus:ring-1 focus:ring-blue-500 ${inputBgClass}`}>
+                                                {TIMING_ABBRS.map(t => <option key={t} value={t}>{t}</option>)}
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div id="addCustomCodBox" style={{display: 'none'}}>
+                                        <label className={`font-bold mb-1 block ${textMutedClass}`}>Custom Protocol Instruction</label>
+                                        <input name="customCod" type="text" placeholder="ENTER CUSTOM WOUND CARE..." className={`w-full rounded-xl px-3 py-2.5 text-sm font-medium uppercase focus:outline-none focus:ring-1 focus:ring-blue-500 ${inputBgClass}`} />
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div>
+                                            <label className={`font-bold mb-1 block ${textMutedClass}`}>Watcher Name</label>
+                                            <input name="watcherName" type="text" defaultValue="FAMILY WATCHER" className={`w-full rounded-xl px-3 py-2.5 text-sm font-medium uppercase focus:outline-none focus:ring-1 focus:ring-blue-500 ${inputBgClass}`} />
+                                        </div>
+                                        <div>
+                                            <label className={`font-bold mb-1 block ${textMutedClass}`}>Watcher Phone</label>
+                                            <input name="watcherPhone" type="text" defaultValue="0917-550-0000" className={`w-full rounded-xl px-3 py-2.5 text-sm font-medium uppercase focus:outline-none focus:ring-1 focus:ring-blue-500 ${inputBgClass}`} />
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-4 pt-2">
+                                        <label className={`flex items-center gap-2 font-bold cursor-pointer ${textMainClass}`}>
+                                            <input name="isPostAmputation" type="checkbox" className="w-4 h-4 rounded text-blue-600" /> BETADINE ALLOWED (Post-Op/Closed)
+                                        </label>
+                                    </div>
+                                    <div className="pt-3 flex gap-3">
+                                        <button type="button" onClick={() => setAddPatientModal(false)} className={`cursor-pointer flex-1 py-3 rounded-xl font-bold text-sm transition ${isDark ? 'bg-slate-700 text-white hover:bg-slate-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>CANCEL</button>
+                                        <button type="submit" className="cursor-pointer flex-1 py-3 rounded-xl font-bold text-sm bg-blue-600 text-white hover:bg-blue-700 transition shadow-sm">ADMIT PATIENT</button>
+                                    </div>
+                                </form>
                             </div>
                         </div>
                     )}
+
                 </div>
             );
         }
